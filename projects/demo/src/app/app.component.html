@@ -1,0 +1,18 @@
+<h1>ngx-virtual-grid demo</h1>
+<p>{{ items.length }} items loaded. Scroll to load more.</p>
+
+<ngx-virtual-grid
+    [items]="items"
+    [gap]="16"
+    [bufferSize]="3"
+    [minItemWidth]="200"
+    [trackBy]="trackById"
+    [loadMoreThreshold]="0.8"
+    (loadMore)="onLoadMore()">
+    <ng-template ngxVirtualScrollItem let-item let-index="index">
+        <div class="card" [style.background-color]="item.color">
+            <span class="card__index">#{{ index }}</span>
+            <span class="card__title">{{ item.title }}</span>
+        </div>
+    </ng-template>
+</ngx-virtual-grid>
