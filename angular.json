@@ -31,6 +31,15 @@
 						"tsConfig": "projects/ngx-virtual-grid/tsconfig.spec.json",
 						"karmaConfig": "projects/ngx-virtual-grid/karma.conf.js"
 					}
+				},
+				"lint": {
+					"builder": "@angular-eslint/builder:lint",
+					"options": {
+						"lintFilePatterns": [
+							"projects/ngx-virtual-grid/**/*.ts",
+							"projects/ngx-virtual-grid/**/*.html"
+						]
+					}
 				}
 			}
 		},
@@ -152,6 +161,15 @@
 							"projects/demo/src/styles.scss"
 						],
 						"scripts": []
+					}
+				},
+				"lint": {
+					"builder": "@angular-eslint/builder:lint",
+					"options": {
+						"lintFilePatterns": [
+							"projects/demo/**/*.ts",
+							"projects/demo/**/*.html"
+						]
 					}
 				}
 			}

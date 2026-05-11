@@ -7,7 +7,7 @@ export function calculateVisibleRange(
 	totalRows: number,
 	bufferSize: number,
 	columnCount: number,
-	totalItems: number
+	totalItems: number,
 ): VisibleRange {
 	if (totalRows === 0 || rowHeight <= 0) {
 		return { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };

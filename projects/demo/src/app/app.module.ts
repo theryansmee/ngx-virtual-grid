@@ -5,7 +5,10 @@ import { AppComponent } from './app.component';
 
 @NgModule({
 	declarations: [AppComponent],
-	imports: [BrowserModule, NgxVirtualGridModule],
+	imports: [
+		BrowserModule,
+		NgxVirtualGridModule,
+	],
 	bootstrap: [AppComponent],
 })
 export class AppModule {}

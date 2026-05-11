@@ -4,7 +4,6 @@ import {
 	Output,
 	EventEmitter,
 	ContentChild,
-	ViewChild,
 	ElementRef,
 	NgZone,
 	ChangeDetectionStrategy,
@@ -16,7 +15,7 @@ import {
 	TrackByFunction,
 	Inject,
 	PLATFORM_ID,
-	ViewContainerRef,
+	TemplateRef,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
@@ -27,304 +26,390 @@ import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models'
 @Component({
 	selector: 'ngx-virtual-grid',
 	templateUrl: './virtual-scroll.component.html',
-	styleUrls: ['./virtual-scroll.component.css'],
+	styleUrls: ['./virtual-scroll.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDestroy {
-	@Input() items: any[] = [];
-	@Input() gap = 0;
-	@Input() bufferSize = 3;
-	@Input() trackBy: TrackByFunction<any> | null = null;
-	@Input() loadMoreThreshold = 0.8;
-	@Input() scrollParent: HTMLElement | null = null;
-	@Input() minItemWidth = 0;
+	@Input()
+	public items: unknown[] = [];
 
-	@Output() loadMore = new EventEmitter<void>();
+	@Input()
+	public bufferSize: number = 3;
 
-	@ContentChild(VirtualGridItemDirective) itemDirective!: VirtualGridItemDirective;
-	@ViewChild('measureContainer', { static: true, read: ViewContainerRef }) measureContainerRef!: ViewContainerRef;
+	@Input()
+	public trackBy: TrackByFunction<unknown> | null = null;
 
-	renderedItems: RenderedItem[] = [];
-	columnCount = 1;
-	topSpacerHeight = 0;
-	bottomSpacerHeight = 0;
+	@Input()
+	public loadMoreThreshold: number = 0.8;
 
-	private hostEl: HTMLElement;
-	private cardWidth = 0;
-	private cardHeight = 0;
-	private measured = false;
-	private layout: GridLayout = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
-	private currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
-	private resizeObserver: ResizeObserver | null = null;
-	private isBrowser: boolean;
-	private loadMoreFired = false;
-	private lastItemCount = 0;
-	private boundOnScroll: (() => void) | null = null;
-	private listenersAttached = false;
+	@Input()
+	public scrollParent: HTMLElement | null = null;
 
-	get itemTemplate() {
-		return this.itemDirective?.templateRef;
+	@Output()
+	public loadMore: EventEmitter<void> = new EventEmitter<void>();
+
+	@ContentChild(VirtualGridItemDirective)
+	public itemDirective!: VirtualGridItemDirective;
+
+	public renderedItems: RenderedItem[] = [];
+
+	public topSpacerHeight: number = 0;
+
+	public bottomSpacerHeight: number = 0;
+
+	#ngZone: NgZone;
+
+	#cdr: ChangeDetectorRef;
+
+	#hostEl: HTMLElement;
+
+	#columnCount: number = 0;
+
+	#rowHeight: number = 0;
+
+	#itemHeight: number = 0;
+
+	#measured: boolean = false;
+
+	#layout: GridLayout = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
+
+	#currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
+
+	#resizeObserver: ResizeObserver | null = null;
+
+	#isBrowser: boolean;
+
+	#loadMoreFired: boolean = false;
+
+	#lastItemCount: number = 0;
+
+	#boundOnScroll: (() => void) | null = null;
+
+	#listenersAttached: boolean = false;
+
+	public get itemTemplate(): TemplateRef<unknown> | null {
+		return this.itemDirective?.templateRef ?? null;
 	}
 
 	constructor(
-		private ngZone: NgZone,
-		private cdr: ChangeDetectorRef,
-		private elRef: ElementRef<HTMLElement>,
-		@Inject(PLATFORM_ID) private platformId: object
+		ngZone: NgZone,
+		cdr: ChangeDetectorRef,
+		elRef: ElementRef<HTMLElement>,
+		@Inject(PLATFORM_ID)
+		platformId: object,
 	) {
-		this.isBrowser = isPlatformBrowser(platformId);
-		this.hostEl = this.elRef.nativeElement;
+		this.#ngZone = ngZone;
+		this.#cdr = cdr;
+		this.#isBrowser = isPlatformBrowser(platformId);
+		this.#hostEl = elRef.nativeElement;
 	}
 
-	ngAfterViewInit(): void {
-		if (!this.isBrowser) { return; }
-		if (this.items.length > 0) {
-			this.measureAndInit();
-		}
-	}
-
-	ngOnChanges(changes: SimpleChanges): void {
-		if (changes['items']) {
-			const newItems = changes['items'].currentValue as any[];
-
-			if (newItems.length !== this.lastItemCount) {
-				this.loadMoreFired = false;
-				this.lastItemCount = newItems.length;
-			}
-
-			if (!this.measured && newItems.length > 0 && this.isBrowser && this.itemDirective) {
-				this.measureAndInit();
-			} else if (this.measured) {
-				this.recalculateLayout();
-			}
+	public ngAfterViewInit(): void {
+		if (!this.#isBrowser) {
+			return;
 		}
 
-		if (this.measured && (changes['gap'] || changes['bufferSize'])) {
-			this.recalculateLayout();
+		if (this.items.length === 0) {
+			return;
 		}
+
+		this.#measureAndInit();
 	}
 
-	ngOnDestroy(): void {
-		this.removeListeners();
+	public ngOnChanges(changes: SimpleChanges): void {
+		this.#handleItemsChange(changes);
 	}
 
-	scrollToIndex(index: number): void {
-		if (!this.measured || this.layout.rowHeight <= 0) { return; }
-		const row = Math.floor(index / this.layout.columnCount);
-		const hostTop = this.hostEl.getBoundingClientRect().top + this.getScrollTop();
-		const target = hostTop + row * this.layout.rowHeight;
-		this.setScrollTop(target);
+	public ngOnDestroy(): void {
+		this.#removeListeners();
 	}
 
-	scrollToOffset(px: number): void {
-		const hostTop = this.hostEl.getBoundingClientRect().top + this.getScrollTop();
-		this.setScrollTop(hostTop + px);
-	}
-
-	refresh(): void {
-		this.measured = false;
-		if (this.items.length > 0) {
-			this.measureAndInit();
+	public scrollToIndex(index: number): void {
+		if (!this.#measured || this.#layout.rowHeight <= 0) {
+			return;
 		}
+
+		const row: number = Math.floor(index / this.#layout.columnCount);
+		const hostTop: number = this.#hostEl.getBoundingClientRect().top + this.#getScrollTop();
+		const target: number = hostTop + row * this.#layout.rowHeight;
+		this.#setScrollTop(target);
 	}
 
-	internalTrackBy = (_index: number, item: RenderedItem): any => {
+	public scrollToOffset(px: number): void {
+		const hostTop: number = this.#hostEl.getBoundingClientRect().top + this.#getScrollTop();
+		this.#setScrollTop(hostTop + px);
+	}
+
+	public refresh(): void {
+		this.#measured = false;
+
+		if (this.items.length === 0) {
+			return;
+		}
+
+		this.#measureAndInit();
+	}
+
+	public internalTrackBy: (_index: number, item: RenderedItem) => unknown = (_index: number, item: RenderedItem): unknown => {
 		if (this.trackBy) {
 			return this.trackBy(item.index, item.data);
 		}
+
 		return item.index;
 	};
 
-	private measureAndInit(): void {
-		if (!this.itemDirective) { return; }
-		this.measureCardSize();
-		if (!this.measured) { return; }
-		this.recalculateLayout();
-		this.setupListeners();
-	}
-
-	private measureCardSize(): void {
-		const templateRef = this.itemDirective.templateRef;
-
-		const measureEl = this.measureContainerRef.element.nativeElement as HTMLElement;
-		if (this.minItemWidth > 0) {
-			measureEl.style.width = this.minItemWidth + 'px';
+	#handleItemsChange(changes: SimpleChanges): void {
+		if (!changes['items']) {
+			return;
 		}
 
-		const viewRef = this.measureContainerRef.createEmbeddedView(templateRef, {
-			$implicit: this.items[0],
-			index: 0,
-		});
-		viewRef.detectChanges();
+		const newItems: unknown[] = changes['items'].currentValue as unknown[];
 
-		const rootNode = viewRef.rootNodes.find(
-			(node: Node) => node.nodeType === Node.ELEMENT_NODE
-		) as HTMLElement | undefined;
-
-		if (rootNode) {
-			this.cardWidth = this.minItemWidth > 0 ? this.minItemWidth : rootNode.offsetWidth;
-			this.cardHeight = rootNode.offsetHeight;
-			this.measured = this.cardWidth > 0 && this.cardHeight > 0;
+		if (newItems.length !== this.#lastItemCount) {
+			this.#loadMoreFired = false;
+			this.#lastItemCount = newItems.length;
 		}
 
-		this.measureContainerRef.clear();
-		measureEl.style.width = '';
+		if (!this.#measured && newItems.length > 0 && this.#isBrowser && this.itemDirective) {
+			this.#measureAndInit();
+			return;
+		}
+
+		if (this.#measured) {
+			this.#recalculateLayout();
+		}
 	}
 
-	private recalculateLayout(): void {
-		const containerWidth = this.hostEl.clientWidth;
+	#measureAndInit(): void {
+		if (!this.itemDirective) {
+			return;
+		}
 
-		this.layout = calculateGridLayout(
-			containerWidth,
-			this.cardWidth,
-			this.cardHeight,
-			this.gap,
-			this.items.length
+		// Read column count from the actual CSS Grid computed style
+		this.#columnCount = this.#getColumnCountFromCSS();
+
+		// Render enough items for measurement (at least 2 rows)
+		const measureBatchSize: number = Math.min(this.items.length, this.#columnCount * 3);
+		this.renderedItems = [];
+		for (let i: number = 0; i < measureBatchSize; i++) {
+			this.renderedItems.push({ data: this.items[i], index: i });
+		}
+		this.#cdr.detectChanges();
+
+		// Measure row height from the rendered grid
+		this.#measureRowHeight();
+
+		if (!this.#measured) {
+			return;
+		}
+
+		this.#recalculateLayout();
+		this.#setupListeners();
+	}
+
+	#getColumnCountFromCSS(): number {
+		const computed: string = getComputedStyle(this.#hostEl).gridTemplateColumns;
+		if (!computed || computed === 'none') {
+			return 1;
+		}
+
+		return computed.split(' ').filter((s: string) => s.length > 0).length;
+	}
+
+	#measureRowHeight(): void {
+		const gridItems: NodeListOf<Element> = this.#hostEl.querySelectorAll(':scope > .ngx-vg__grid-item');
+
+		if (gridItems.length === 0) {
+			return;
+		}
+
+		const firstItem: HTMLElement = gridItems[0] as HTMLElement;
+		const firstRect: DOMRect = firstItem.getBoundingClientRect();
+		this.#itemHeight = firstRect.height;
+
+		if (gridItems.length > this.#columnCount) {
+			const secondRowItem: HTMLElement = gridItems[this.#columnCount] as HTMLElement;
+			const secondRect: DOMRect = secondRowItem.getBoundingClientRect();
+			this.#rowHeight = secondRect.top - firstRect.top;
+		} else {
+			// Only one row available — use item height (no gap info)
+			this.#rowHeight = this.#itemHeight;
+		}
+
+		this.#measured = this.#columnCount > 0 && this.#rowHeight > 0 && this.#itemHeight > 0;
+	}
+
+	#recalculateLayout(): void {
+		this.#layout = calculateGridLayout(
+			this.#columnCount,
+			this.#rowHeight,
+			this.#itemHeight,
+			this.items.length,
 		);
-		this.columnCount = this.layout.columnCount;
 
-		this.updateVisibleRange();
+		this.#updateVisibleRange();
 	}
 
-	private updateVisibleRange(): void {
-		const viewportHeight = this.getViewportHeight();
-		const hostRect = this.hostEl.getBoundingClientRect();
-		const scrollIntoComponent = Math.max(0, -hostRect.top);
+	#updateVisibleRange(): void {
+		const viewportHeight: number = this.#getViewportHeight();
+		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
+		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
 
-		const newRange = calculateVisibleRange(
+		this.#currentRange = calculateVisibleRange(
 			scrollIntoComponent,
 			viewportHeight,
-			this.layout.rowHeight,
-			this.layout.totalRows,
+			this.#layout.rowHeight,
+			this.#layout.totalRows,
 			this.bufferSize,
-			this.layout.columnCount,
-			this.items.length
+			this.#layout.columnCount,
+			this.items.length,
 		);
 
-		this.currentRange = newRange;
-		this.updateRenderedItems();
-		this.updateSpacers();
-		this.cdr.markForCheck();
+		this.#updateRenderedItems();
+		this.#updateSpacers();
+		this.#cdr.markForCheck();
 	}
 
-	private updateRenderedItems(): void {
-		const { startIndex, endIndex } = this.currentRange;
+	#updateRenderedItems(): void {
+		const { startIndex, endIndex } = this.#currentRange;
 		this.renderedItems = [];
-		for (let i = startIndex; i < endIndex; i++) {
+
+		for (let i: number = startIndex; i < endIndex; i++) {
 			this.renderedItems.push({ data: this.items[i], index: i });
 		}
 	}
 
-	private updateSpacers(): void {
-		const { startRow, endRow } = this.currentRange;
-		this.topSpacerHeight = startRow * this.layout.rowHeight;
-		const rowsBelow = this.layout.totalRows - endRow;
-		this.bottomSpacerHeight = Math.max(0, rowsBelow * this.layout.rowHeight);
+	#updateSpacers(): void {
+		const { startRow, endRow } = this.#currentRange;
+		this.topSpacerHeight = startRow * this.#layout.rowHeight;
+		const rowsBelow: number = this.#layout.totalRows - endRow;
+		this.bottomSpacerHeight = Math.max(0, rowsBelow * this.#layout.rowHeight);
 	}
 
-	private setupListeners(): void {
-		if (this.listenersAttached) { return; }
-		this.listenersAttached = true;
+	#setupListeners(): void {
+		if (this.#listenersAttached) {
+			return;
+		}
 
-		this.ngZone.runOutsideAngular(() => {
-			this.boundOnScroll = this.onScroll.bind(this);
-			const scrollTarget = this.scrollParent || window;
-			scrollTarget.addEventListener('scroll', this.boundOnScroll, { passive: true });
+		this.#listenersAttached = true;
 
-			this.resizeObserver = new ResizeObserver(() => this.onResize());
-			this.resizeObserver.observe(this.hostEl);
+		this.#ngZone.runOutsideAngular(() => {
+			this.#boundOnScroll = this.#onScroll.bind(this);
+			const scrollTarget: HTMLElement | Window = this.scrollParent || window;
+			scrollTarget.addEventListener('scroll', this.#boundOnScroll, { passive: true });
+
+			this.#resizeObserver = new ResizeObserver(() => this.#onResize());
+			this.#resizeObserver.observe(this.#hostEl);
 		});
 	}
 
-	private removeListeners(): void {
-		if (this.boundOnScroll) {
-			const scrollTarget = this.scrollParent || window;
-			scrollTarget.removeEventListener('scroll', this.boundOnScroll);
-			this.boundOnScroll = null;
+	#removeListeners(): void {
+		if (this.#boundOnScroll) {
+			const scrollTarget: HTMLElement | Window = this.scrollParent || window;
+			scrollTarget.removeEventListener('scroll', this.#boundOnScroll);
+			this.#boundOnScroll = null;
 		}
-		if (this.resizeObserver) {
-			this.resizeObserver.disconnect();
-			this.resizeObserver = null;
+
+		if (this.#resizeObserver) {
+			this.#resizeObserver.disconnect();
+			this.#resizeObserver = null;
 		}
-		this.listenersAttached = false;
+
+		this.#listenersAttached = false;
 	}
 
-	private onScroll(): void {
-		const viewportHeight = this.getViewportHeight();
-		const hostRect = this.hostEl.getBoundingClientRect();
-		const scrollIntoComponent = Math.max(0, -hostRect.top);
+	#onScroll(): void {
+		const viewportHeight: number = this.#getViewportHeight();
+		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
+		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
 
-		const newRange = calculateVisibleRange(
+		const newRange: VisibleRange = calculateVisibleRange(
 			scrollIntoComponent,
 			viewportHeight,
-			this.layout.rowHeight,
-			this.layout.totalRows,
+			this.#layout.rowHeight,
+			this.#layout.totalRows,
 			this.bufferSize,
-			this.layout.columnCount,
-			this.items.length
+			this.#layout.columnCount,
+			this.items.length,
 		);
 
-		const rangeChanged =
-			newRange.startRow !== this.currentRange.startRow ||
-			newRange.endRow !== this.currentRange.endRow;
-
-		if (rangeChanged) {
-			this.ngZone.run(() => {
-				this.currentRange = newRange;
-				this.updateRenderedItems();
-				this.updateSpacers();
-				this.cdr.markForCheck();
-			});
-		}
-
-		if (!this.loadMoreFired && this.layout.totalContentHeight > 0) {
-			const scrolledInto = scrollIntoComponent + viewportHeight;
-			const scrollRatio = scrolledInto / this.layout.totalContentHeight;
-			if (scrollRatio >= this.loadMoreThreshold) {
-				this.loadMoreFired = true;
-				this.ngZone.run(() => this.loadMore.emit());
-			}
-		}
+		this.#applyRangeUpdate(newRange);
+		this.#checkLoadMore(scrollIntoComponent, viewportHeight);
 	}
 
-	private onResize(): void {
-		if (!this.measured) { return; }
+	#applyRangeUpdate(newRange: VisibleRange): void {
+		const rangeChanged: boolean =
+			newRange.startRow !== this.#currentRange.startRow ||
+			newRange.endRow !== this.#currentRange.endRow;
 
-		const containerWidth = this.hostEl.clientWidth;
+		if (!rangeChanged) {
+			return;
+		}
 
-		this.layout = calculateGridLayout(
-			containerWidth,
-			this.cardWidth,
-			this.cardHeight,
-			this.gap,
-			this.items.length
-		);
-		this.columnCount = this.layout.columnCount;
-
-		this.ngZone.run(() => {
-			this.updateVisibleRange();
+		this.#ngZone.run(() => {
+			this.#currentRange = newRange;
+			this.#updateRenderedItems();
+			this.#updateSpacers();
+			this.#cdr.markForCheck();
 		});
 	}
 
-	private getScrollTop(): number {
+	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
+		if (this.#loadMoreFired) {
+			return;
+		}
+
+		if (this.#layout.totalContentHeight <= 0) {
+			return;
+		}
+
+		const scrolledInto: number = scrollIntoComponent + viewportHeight;
+		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
+
+		if (scrollRatio < this.loadMoreThreshold) {
+			return;
+		}
+
+		this.#loadMoreFired = true;
+		this.#ngZone.run(() => this.loadMore.emit());
+	}
+
+	#onResize(): void {
+		if (!this.#measured) {
+			return;
+		}
+
+		// Re-read column count and row height from the actual grid
+		this.#columnCount = this.#getColumnCountFromCSS();
+		this.#measureRowHeight();
+
+		this.#ngZone.run(() => {
+			this.#recalculateLayout();
+		});
+	}
+
+	#getScrollTop(): number {
 		if (this.scrollParent) {
 			return this.scrollParent.scrollTop;
 		}
+
 		return window.scrollY || document.documentElement.scrollTop;
 	}
 
-	private setScrollTop(value: number): void {
+	#setScrollTop(value: number): void {
 		if (this.scrollParent) {
 			this.scrollParent.scrollTop = value;
-		} else {
-			window.scrollTo({ top: value });
+			return;
 		}
+
+		window.scrollTo({ top: value });
 	}
 
-	private getViewportHeight(): number {
+	#getViewportHeight(): number {
 		if (this.scrollParent) {
 			return this.scrollParent.clientHeight;
 		}
+
 		return window.innerHeight;
 	}
 }

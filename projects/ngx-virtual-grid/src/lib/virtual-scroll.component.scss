@@ -1,0 +1,10 @@
+:host {
+	display: grid;
+	position: relative;
+	overflow-anchor: none;
+}
+
+.ngx-vg__spacer-top,
+.ngx-vg__spacer-bottom {
+	grid-column: 1 / -1;
+}

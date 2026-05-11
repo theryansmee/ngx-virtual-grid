@@ -13,6 +13,11 @@ p {
 	color: #666;
 }
 
+.demo-grid {
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 16px;
+}
+
 .card {
 	display: flex;
 	flex-direction: column;

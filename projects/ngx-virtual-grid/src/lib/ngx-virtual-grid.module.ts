@@ -4,8 +4,14 @@ import { NgxVirtualGridComponent } from './virtual-scroll.component';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 
 @NgModule({
-	declarations: [NgxVirtualGridComponent, VirtualGridItemDirective],
+	declarations: [
+		NgxVirtualGridComponent,
+		VirtualGridItemDirective,
+	],
 	imports: [CommonModule],
-	exports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+	exports: [
+		NgxVirtualGridComponent,
+		VirtualGridItemDirective,
+	],
 })
 export class NgxVirtualGridModule {}

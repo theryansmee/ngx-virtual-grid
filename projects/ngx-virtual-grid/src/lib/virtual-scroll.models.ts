@@ -12,7 +12,7 @@ export interface VisibleRange {
 	endIndex: number;
 }
 
-export interface RenderedItem<T = any> {
+export interface RenderedItem<T = unknown> {
 	data: T;
 	index: number;
 }
