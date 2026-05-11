@@ -1,8 +1,8 @@
 import { Directive, TemplateRef } from '@angular/core';
 
 @Directive({
-    selector: '[ngxVirtualScrollItem]',
+	selector: '[ngxVirtualGridItem]',
 })
-export class VirtualScrollItemDirective {
-    constructor(public templateRef: TemplateRef<any>) {}
+export class VirtualGridItemDirective {
+	constructor(public templateRef: TemplateRef<any>) {}
 }

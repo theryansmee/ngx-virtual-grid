@@ -1,17 +1,17 @@
 <div class="ngx-vs-spacer-top" [style.height.px]="topSpacerHeight"></div>
 
 <div class="ngx-vs-content"
-     [style.grid-template-columns]="'repeat(' + columnCount + ', 1fr)'"
-     [style.gap.px]="gap"
-     role="list"
-     [attr.aria-label]="'List of ' + items.length + ' items'">
-    <div *ngFor="let item of renderedItems; trackBy: internalTrackBy"
-         role="listitem"
-         [attr.aria-setsize]="items.length"
-         [attr.aria-posinset]="item.index + 1">
-        <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item.data, index: item.index }">
-        </ng-container>
-    </div>
+	 [style.grid-template-columns]="'repeat(' + columnCount + ', 1fr)'"
+	 [style.gap.px]="gap"
+	 role="list"
+	 [attr.aria-label]="'List of ' + items.length + ' items'">
+	<div *ngFor="let item of renderedItems; trackBy: internalTrackBy"
+		 role="listitem"
+		 [attr.aria-setsize]="items.length"
+		 [attr.aria-posinset]="item.index + 1">
+		<ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item.data, index: item.index }">
+		</ng-container>
+	</div>
 </div>
 
 <div class="ngx-vs-spacer-bottom" [style.height.px]="bottomSpacerHeight"></div>

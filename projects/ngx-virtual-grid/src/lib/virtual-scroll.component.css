@@ -1,16 +1,16 @@
 :host {
-    display: block;
-    position: relative;
+	display: block;
+	position: relative;
 }
 
 .ngx-vs-content {
-    display: grid;
+	display: grid;
 }
 
 .ngx-vs-measure {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
-    top: -9999px;
-    left: -9999px;
+	position: absolute;
+	visibility: hidden;
+	pointer-events: none;
+	top: -9999px;
+	left: -9999px;
 }
