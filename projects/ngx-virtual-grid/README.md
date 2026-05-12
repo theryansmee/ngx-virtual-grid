@@ -37,7 +37,7 @@ npm install ngx-virtual-grid@angular14
 import { NgxVirtualGridModule } from 'ngx-virtual-grid';
 
 @NgModule({
-  imports: [NgxVirtualGridModule],
+	imports: [NgxVirtualGridModule],
 })
 export class AppModule {}
 ```
@@ -46,18 +46,18 @@ export class AppModule {}
 
 ```html
 <ngx-virtual-grid
-  class="my-grid"
-  [items]="items"
-  [bufferSize]="3"
-  [trackBy]="trackById"
-  [loadMoreThreshold]="0.8"
-  (loadMore)="onLoadMore()">
+	class="my-grid"
+	[items]="items"
+	[bufferSize]="3"
+	[trackBy]="trackById"
+	[loadMoreThreshold]="0.8"
+	(loadMore)="onLoadMore()">
 
-  <ng-template ngxVirtualGridItem let-item let-index="index">
-    <div class="card">
-      #{{ index }} - {{ item.title }}
-    </div>
-  </ng-template>
+	<ng-template ngxVirtualGridItem let-item let-index="index">
+		<div class="card">
+		  #{{ index }} - {{ item.title }}
+		</div>
+	</ng-template>
 </ngx-virtual-grid>
 ```
 
@@ -67,8 +67,8 @@ The component reads column count from `grid-template-columns` on the host elemen
 
 ```css
 .my-grid {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 16px;
 }
 ```
 
