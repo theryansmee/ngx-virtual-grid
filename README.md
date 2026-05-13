@@ -18,12 +18,13 @@ Each Angular major version is maintained on its own branch and published under a
 |---|---|---|---|
 | `angular/14` | 14.x | `14.x.x` | `angular14` |
 | `angular/15` | 15.x | `15.x.x` | `angular15` |
+| `angular/16` | 16.x | `16.x.x` | `angular16` |
 
 The `main` branch tracks the latest stable version.
 
 ## Prerequisites
 
-- Node.js 16.13+ (or 18.x recommended)
+- Node.js 16.14+ (or 18.x recommended)
 - npm 8+
 
 ## Getting Started
@@ -71,7 +72,7 @@ npm run build:lib
 cd dist/ngx-virtual-grid
 
 # Publish with the appropriate dist-tag
-npm publish --tag angular15
+npm publish --tag angular16
 ```
 
 When publishing older Angular version branches, always use the version-specific tag (e.g. `--tag angular14`) so it doesn't become the `latest` tag on npm.

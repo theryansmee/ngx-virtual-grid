@@ -15,6 +15,9 @@ A responsive virtual-scrolling grid for Angular. Renders only the visible items 
 ## Installation
 
 ```bash
+# Angular 16
+npm install ngx-virtual-grid@angular16
+
 # Angular 15
 npm install ngx-virtual-grid@angular15
 
@@ -26,6 +29,7 @@ npm install ngx-virtual-grid@angular14
 
 | Angular | Library version | Install tag |
 |---|---|---|
+| 16.x | `16.x.x` | `@angular16` |
 | 15.x | `15.x.x` | `@angular15` |
 | 14.x | `14.x.x` | `@angular14` |
 
