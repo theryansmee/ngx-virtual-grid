@@ -1,9 +1,9 @@
 <div
 	class="ngx-vg__spacer-top"
-	[style.height.px]="topSpacerHeight">
+	[style.height.px]="topSpacerHeight()">
 </div>
 
-@for (item of renderedItems; track item.index) {
+@for (item of renderedItems(); track item.index) {
 	<div
 		class="ngx-vg__grid-item"
 		role="listitem"
@@ -17,5 +17,5 @@
 
 <div
 	class="ngx-vg__spacer-bottom"
-	[style.height.px]="bottomSpacerHeight">
+	[style.height.px]="bottomSpacerHeight()">
 </div>

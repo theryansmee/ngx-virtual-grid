@@ -5,16 +5,18 @@ import {
 	InputSignal,
 	NgZone,
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	OutputEmitterRef,
 	Signal,
 	TemplateRef,
+	WritableSignal,
 	afterNextRender,
 	input,
 	output,
 	contentChild,
 	inject,
 	effect,
+	signal,
+	linkedSignal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
@@ -42,19 +44,23 @@ export class NgxVirtualGridComponent {
 
 	public readonly itemDirective: Signal<VirtualGridItemDirective | undefined> = contentChild(VirtualGridItemDirective);
 
-	public renderedItems: RenderedItem[] = [];
+	public readonly renderedItems: WritableSignal<RenderedItem[]> = signal<RenderedItem[]>([]);
 
-	public topSpacerHeight: number = 0;
+	public readonly topSpacerHeight: WritableSignal<number> = signal<number>(0);
 
-	public bottomSpacerHeight: number = 0;
+	public readonly bottomSpacerHeight: WritableSignal<number> = signal<number>(0);
 
 	readonly #ngZone: NgZone = inject(NgZone);
-
-	readonly #cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
 	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
 
 	readonly #destroyRef: DestroyRef = inject(DestroyRef);
+
+	// Reset loadMoreFired when items count changes
+	readonly #loadMoreFired: WritableSignal<boolean> = linkedSignal({
+		source: () => this.items().length,
+		computation: () => false,
+	});
 
 	#columnCount: number = 0;
 
@@ -69,10 +75,6 @@ export class NgxVirtualGridComponent {
 	#currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
 
 	#resizeObserver: ResizeObserver | null = null;
-
-	#loadMoreFired: boolean = false;
-
-	#lastItemCount: number = 0;
 
 	#boundOnScroll: (() => void) | null = null;
 
@@ -129,11 +131,6 @@ export class NgxVirtualGridComponent {
 	}
 
 	#handleItemsChange(newItems: unknown[], directive: VirtualGridItemDirective | undefined): void {
-		if (newItems.length !== this.#lastItemCount) {
-			this.#loadMoreFired = false;
-			this.#lastItemCount = newItems.length;
-		}
-
 		if (!this.#measured && newItems.length > 0 && directive) {
 			this.#measureAndInit();
 			return;
@@ -155,11 +152,14 @@ export class NgxVirtualGridComponent {
 		// Render enough items for measurement (at least 2 rows)
 		const items: unknown[] = this.items();
 		const measureBatchSize: number = Math.min(items.length, this.#columnCount * 3);
-		this.renderedItems = [];
+		const measureItems: RenderedItem[] = [];
 		for (let i: number = 0; i < measureBatchSize; i++) {
-			this.renderedItems.push({ data: items[i], index: i });
+			measureItems.push({ data: items[i], index: i });
 		}
-		this.#cdr.detectChanges();
+		this.renderedItems.set(measureItems);
+
+		// Force synchronous layout so we can measure
+		void this.#hostEl.offsetHeight;
 
 		// Measure row height from the rendered grid
 		this.#measureRowHeight();
@@ -232,24 +232,25 @@ export class NgxVirtualGridComponent {
 
 		this.#updateRenderedItems();
 		this.#updateSpacers();
-		this.#cdr.markForCheck();
 	}
 
 	#updateRenderedItems(): void {
 		const { startIndex, endIndex } = this.#currentRange;
 		const items: unknown[] = this.items();
-		this.renderedItems = [];
+		const newRendered: RenderedItem[] = [];
 
 		for (let i: number = startIndex; i < endIndex; i++) {
-			this.renderedItems.push({ data: items[i], index: i });
+			newRendered.push({ data: items[i], index: i });
 		}
+
+		this.renderedItems.set(newRendered);
 	}
 
 	#updateSpacers(): void {
 		const { startRow, endRow } = this.#currentRange;
-		this.topSpacerHeight = startRow * this.#layout.rowHeight;
+		this.topSpacerHeight.set(startRow * this.#layout.rowHeight);
 		const rowsBelow: number = this.#layout.totalRows - endRow;
-		this.bottomSpacerHeight = Math.max(0, rowsBelow * this.#layout.rowHeight);
+		this.bottomSpacerHeight.set(Math.max(0, rowsBelow * this.#layout.rowHeight));
 	}
 
 	#setupListeners(): void {
@@ -316,12 +317,11 @@ export class NgxVirtualGridComponent {
 			this.#currentRange = newRange;
 			this.#updateRenderedItems();
 			this.#updateSpacers();
-			this.#cdr.markForCheck();
 		});
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
-		if (this.#loadMoreFired) {
+		if (this.#loadMoreFired()) {
 			return;
 		}
 
@@ -336,7 +336,7 @@ export class NgxVirtualGridComponent {
 			return;
 		}
 
-		this.#loadMoreFired = true;
+		this.#loadMoreFired.set(true);
 		this.#ngZone.run(() => this.loadMore.emit());
 	}
 
