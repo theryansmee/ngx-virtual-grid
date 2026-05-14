@@ -82,7 +82,7 @@
 						"outputPath": "dist/demo",
 						"index": "projects/demo/src/index.html",
 						"main": "projects/demo/src/main.ts",
-						"polyfills": "projects/demo/src/polyfills.ts",
+						"polyfills": ["zone.js"],
 						"tsConfig": "projects/demo/tsconfig.app.json",
 						"inlineStyleLanguage": "scss",
 						"assets": [
@@ -149,7 +149,7 @@
 					"builder": "@angular-devkit/build-angular:karma",
 					"options": {
 						"main": "projects/demo/src/test.ts",
-						"polyfills": "projects/demo/src/polyfills.ts",
+						"polyfills": ["zone.js", "zone.js/testing"],
 						"tsConfig": "projects/demo/tsconfig.spec.json",
 						"karmaConfig": "projects/demo/karma.conf.js",
 						"inlineStyleLanguage": "scss",

@@ -31,8 +31,8 @@ export class AppComponent {
 		this.#loadItems(200);
 	}
 
-	public trackById(_index: number, item: DemoItem): number {
-		return item.id;
+	public trackById(_index: number, item: unknown): number {
+		return (item as DemoItem).id;
 	}
 
 	public onLoadMore(): void {
