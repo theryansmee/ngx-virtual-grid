@@ -25,11 +25,13 @@
 					"defaultConfiguration": "production"
 				},
 				"test": {
-					"builder": "@angular-devkit/build-angular:karma",
+					"builder": "@angular-devkit/build-angular:web-test-runner",
 					"options": {
-						"main": "projects/ngx-virtual-grid/src/test.ts",
 						"tsConfig": "projects/ngx-virtual-grid/tsconfig.spec.json",
-						"karmaConfig": "projects/ngx-virtual-grid/karma.conf.js"
+						"polyfills": [
+							"zone.js",
+							"zone.js/testing"
+						]
 					}
 				},
 				"lint": {
@@ -77,17 +79,24 @@
 			"prefix": "app",
 			"architect": {
 				"build": {
-					"builder": "@angular-devkit/build-angular:browser",
+					"builder": "@angular-devkit/build-angular:application",
 					"options": {
 						"outputPath": "dist/demo",
 						"index": "projects/demo/src/index.html",
-						"main": "projects/demo/src/main.ts",
-						"polyfills": ["zone.js"],
+						"browser": "projects/demo/src/main.ts",
 						"tsConfig": "projects/demo/tsconfig.app.json",
 						"inlineStyleLanguage": "scss",
 						"assets": [
-							"projects/demo/src/favicon.ico",
-							"projects/demo/src/assets"
+							{
+								"glob": "favicon.ico",
+								"input": "projects/demo/src",
+								"output": ""
+							},
+							{
+								"glob": "**/*",
+								"input": "projects/demo/src/assets",
+								"output": "assets"
+							}
 						],
 						"styles": [
 							"projects/demo/src/styles.scss"
@@ -108,19 +117,10 @@
 									"maximumError": "4kb"
 								}
 							],
-							"fileReplacements": [
-								{
-									"replace": "projects/demo/src/environments/environment.ts",
-									"with": "projects/demo/src/environments/environment.prod.ts"
-								}
-							],
 							"outputHashing": "all"
 						},
 						"development": {
-							"buildOptimizer": false,
 							"optimization": false,
-							"vendorChunk": true,
-							"extractLicenses": false,
 							"sourceMap": true,
 							"namedChunks": true
 						}
@@ -131,10 +131,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"browserTarget": "demo:build:production"
+							"buildTarget": "demo:build:production"
 						},
 						"development": {
-							"browserTarget": "demo:build:development"
+							"buildTarget": "demo:build:development"
 						}
 					},
 					"defaultConfiguration": "development"
@@ -142,25 +142,7 @@
 				"extract-i18n": {
 					"builder": "@angular-devkit/build-angular:extract-i18n",
 					"options": {
-						"browserTarget": "demo:build"
-					}
-				},
-				"test": {
-					"builder": "@angular-devkit/build-angular:karma",
-					"options": {
-						"main": "projects/demo/src/test.ts",
-						"polyfills": ["zone.js", "zone.js/testing"],
-						"tsConfig": "projects/demo/tsconfig.spec.json",
-						"karmaConfig": "projects/demo/karma.conf.js",
-						"inlineStyleLanguage": "scss",
-						"assets": [
-							"projects/demo/src/favicon.ico",
-							"projects/demo/src/assets"
-						],
-						"styles": [
-							"projects/demo/src/styles.scss"
-						],
-						"scripts": []
+						"buildTarget": "demo:build"
 					}
 				},
 				"lint": {
