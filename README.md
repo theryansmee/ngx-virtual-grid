@@ -4,6 +4,16 @@ Monorepo for the `ngx-virtual-grid` Angular library and its demo application.
 
 [Live Demo](https://theryansmee.github.io/ngx-virtual-grid/)
 
+## Installation
+
+```bash
+npm install @theryansmee/ngx-virtual-grid
+```
+
+```bash
+yarn add @theryansmee/ngx-virtual-grid
+```
+
 ## Project Structure
 
 ```
