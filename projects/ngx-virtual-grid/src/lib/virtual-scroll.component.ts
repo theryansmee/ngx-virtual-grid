@@ -1,23 +1,22 @@
 import {
 	Component,
+	DestroyRef,
 	ElementRef,
 	InputSignal,
 	NgZone,
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
-	AfterViewInit,
-	OnDestroy,
 	OutputEmitterRef,
-	PLATFORM_ID,
 	Signal,
 	TemplateRef,
+	afterNextRender,
 	input,
 	output,
 	contentChild,
 	inject,
 	effect,
 } from '@angular/core';
-import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
@@ -25,13 +24,12 @@ import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models'
 
 @Component({
 	selector: 'ngx-virtual-grid',
-	standalone: true,
 	imports: [NgTemplateOutlet],
 	templateUrl: './virtual-scroll.component.html',
 	styleUrl: './virtual-scroll.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
+export class NgxVirtualGridComponent {
 	public readonly items: InputSignal<unknown[]> = input<unknown[]>([]);
 
 	public readonly bufferSize: InputSignal<number> = input<number>(3);
@@ -56,7 +54,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 
 	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
 
-	readonly #isBrowser: boolean = isPlatformBrowser(inject(PLATFORM_ID));
+	readonly #destroyRef: DestroyRef = inject(DestroyRef);
 
 	#columnCount: number = 0;
 
@@ -85,29 +83,23 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 	}
 
 	constructor() {
+		// Handles the synchronous-items case (items available at first render)
+		afterNextRender(() => {
+			if (this.items().length > 0) {
+				this.#measureAndInit();
+			}
+		});
+
+		// Handles the async-items case (items arriving after init) and subsequent changes.
+		// Reading itemDirective() creates a dependency so the effect re-runs when
+		// the content child becomes available.
 		effect(() => {
 			const newItems: unknown[] = this.items();
-			// Reading itemDirective() here makes the effect also track the content query.
-			// This ensures the effect re-runs when the content child becomes available.
 			const directive: VirtualGridItemDirective | undefined = this.itemDirective();
 			this.#handleItemsChange(newItems, directive);
 		});
-	}
 
-	public ngAfterViewInit(): void {
-		if (!this.#isBrowser) {
-			return;
-		}
-
-		if (this.items().length === 0) {
-			return;
-		}
-
-		this.#measureAndInit();
-	}
-
-	public ngOnDestroy(): void {
-		this.#removeListeners();
+		this.#destroyRef.onDestroy(() => this.#removeListeners());
 	}
 
 	public scrollToIndex(index: number): void {
@@ -142,7 +134,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 			this.#lastItemCount = newItems.length;
 		}
 
-		if (!this.#measured && newItems.length > 0 && this.#isBrowser && directive) {
+		if (!this.#measured && newItems.length > 0 && directive) {
 			this.#measureAndInit();
 			return;
 		}

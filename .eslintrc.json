@@ -14,16 +14,14 @@
 				"plugin:@angular-eslint/recommended"
 			],
 			"rules": {
-				"indent": "off",
-				"@typescript-eslint/indent": [
+				"indent": [
 					"error",
 					"tab",
 					{
 						"SwitchCase": 1
 					}
 				],
-				"comma-dangle": "off",
-				"@typescript-eslint/comma-dangle": [
+				"comma-dangle": [
 					"error",
 					"always-multiline"
 				],

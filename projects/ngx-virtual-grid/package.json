@@ -1,6 +1,6 @@
 {
 	"name": "@theryansmee/ngx-virtual-grid",
-	"version": "18.0.0",
+	"version": "19.0.0",
 	"description": "A responsive virtual-scrolling grid for Angular. Fixed-size items, auto-measured dimensions, CSS Grid layout.",
 	"license": "MIT",
 	"repository": {
@@ -15,8 +15,8 @@
 		"ngx"
 	],
 	"peerDependencies": {
-		"@angular/common": "^18.0.0",
-		"@angular/core": "^18.0.0"
+		"@angular/common": "^19.0.0",
+		"@angular/core": "^19.0.0"
 	},
 	"dependencies": {
 		"tslib": "^2.3.0"

@@ -9,7 +9,6 @@ interface DemoItem {
 
 @Component({
 	selector: 'app-root',
-	standalone: true,
 	imports: [
 		NgxVirtualGridComponent,
 		VirtualGridItemDirective,
