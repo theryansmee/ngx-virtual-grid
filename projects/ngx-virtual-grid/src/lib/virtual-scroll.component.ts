@@ -1,20 +1,21 @@
 import {
 	Component,
-	Input,
-	Output,
-	EventEmitter,
-	ContentChild,
 	ElementRef,
+	InputSignal,
 	NgZone,
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
 	AfterViewInit,
-	OnChanges,
 	OnDestroy,
-	SimpleChanges,
-	Inject,
+	OutputEmitterRef,
 	PLATFORM_ID,
+	Signal,
 	TemplateRef,
+	input,
+	output,
+	contentChild,
+	inject,
+	effect,
 } from '@angular/core';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
@@ -30,24 +31,18 @@ import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models'
 	styleUrl: './virtual-scroll.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDestroy {
-	@Input()
-	public items: unknown[] = [];
+export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
+	public readonly items: InputSignal<unknown[]> = input<unknown[]>([]);
 
-	@Input()
-	public bufferSize: number = 3;
+	public readonly bufferSize: InputSignal<number> = input<number>(3);
 
-	@Input()
-	public loadMoreThreshold: number = 0.8;
+	public readonly loadMoreThreshold: InputSignal<number> = input<number>(0.8);
 
-	@Input()
-	public scrollParent: HTMLElement | null = null;
+	public readonly scrollParent: InputSignal<HTMLElement | null> = input<HTMLElement | null>(null);
 
-	@Output()
-	public loadMore: EventEmitter<void> = new EventEmitter<void>();
+	public readonly loadMore: OutputEmitterRef<void> = output<void>();
 
-	@ContentChild(VirtualGridItemDirective)
-	public itemDirective!: VirtualGridItemDirective;
+	public readonly itemDirective: Signal<VirtualGridItemDirective | undefined> = contentChild(VirtualGridItemDirective);
 
 	public renderedItems: RenderedItem[] = [];
 
@@ -55,11 +50,13 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	public bottomSpacerHeight: number = 0;
 
-	#ngZone: NgZone;
+	readonly #ngZone: NgZone = inject(NgZone);
 
-	#cdr: ChangeDetectorRef;
+	readonly #cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
-	#hostEl: HTMLElement;
+	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
+
+	readonly #isBrowser: boolean = isPlatformBrowser(inject(PLATFORM_ID));
 
 	#columnCount: number = 0;
 
@@ -75,8 +72,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	#resizeObserver: ResizeObserver | null = null;
 
-	#isBrowser: boolean;
-
 	#loadMoreFired: boolean = false;
 
 	#lastItemCount: number = 0;
@@ -86,20 +81,17 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 	#listenersAttached: boolean = false;
 
 	public get itemTemplate(): TemplateRef<unknown> | null {
-		return this.itemDirective?.templateRef ?? null;
+		return this.itemDirective()?.templateRef ?? null;
 	}
 
-	constructor(
-		ngZone: NgZone,
-		cdr: ChangeDetectorRef,
-		elRef: ElementRef<HTMLElement>,
-		@Inject(PLATFORM_ID)
-		platformId: object,
-	) {
-		this.#ngZone = ngZone;
-		this.#cdr = cdr;
-		this.#isBrowser = isPlatformBrowser(platformId);
-		this.#hostEl = elRef.nativeElement;
+	constructor() {
+		effect(() => {
+			const newItems: unknown[] = this.items();
+			// Reading itemDirective() here makes the effect also track the content query.
+			// This ensures the effect re-runs when the content child becomes available.
+			const directive: VirtualGridItemDirective | undefined = this.itemDirective();
+			this.#handleItemsChange(newItems, directive);
+		});
 	}
 
 	public ngAfterViewInit(): void {
@@ -107,15 +99,11 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			return;
 		}
 
-		if (this.items.length === 0) {
+		if (this.items().length === 0) {
 			return;
 		}
 
 		this.#measureAndInit();
-	}
-
-	public ngOnChanges(changes: SimpleChanges): void {
-		this.#handleItemsChange(changes);
 	}
 
 	public ngOnDestroy(): void {
@@ -141,26 +129,20 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 	public refresh(): void {
 		this.#measured = false;
 
-		if (this.items.length === 0) {
+		if (this.items().length === 0) {
 			return;
 		}
 
 		this.#measureAndInit();
 	}
 
-	#handleItemsChange(changes: SimpleChanges): void {
-		if (!changes['items']) {
-			return;
-		}
-
-		const newItems: unknown[] = changes['items'].currentValue as unknown[];
-
+	#handleItemsChange(newItems: unknown[], directive: VirtualGridItemDirective | undefined): void {
 		if (newItems.length !== this.#lastItemCount) {
 			this.#loadMoreFired = false;
 			this.#lastItemCount = newItems.length;
 		}
 
-		if (!this.#measured && newItems.length > 0 && this.#isBrowser && this.itemDirective) {
+		if (!this.#measured && newItems.length > 0 && this.#isBrowser && directive) {
 			this.#measureAndInit();
 			return;
 		}
@@ -171,7 +153,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 	}
 
 	#measureAndInit(): void {
-		if (!this.itemDirective) {
+		if (!this.itemDirective()) {
 			return;
 		}
 
@@ -179,10 +161,11 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 		this.#columnCount = this.#getColumnCountFromCSS();
 
 		// Render enough items for measurement (at least 2 rows)
-		const measureBatchSize: number = Math.min(this.items.length, this.#columnCount * 3);
+		const items: unknown[] = this.items();
+		const measureBatchSize: number = Math.min(items.length, this.#columnCount * 3);
 		this.renderedItems = [];
 		for (let i: number = 0; i < measureBatchSize; i++) {
-			this.renderedItems.push({ data: this.items[i], index: i });
+			this.renderedItems.push({ data: items[i], index: i });
 		}
 		this.#cdr.detectChanges();
 
@@ -234,7 +217,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			this.#columnCount,
 			this.#rowHeight,
 			this.#itemHeight,
-			this.items.length,
+			this.items().length,
 		);
 
 		this.#updateVisibleRange();
@@ -250,9 +233,9 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			viewportHeight,
 			this.#layout.rowHeight,
 			this.#layout.totalRows,
-			this.bufferSize,
+			this.bufferSize(),
 			this.#layout.columnCount,
-			this.items.length,
+			this.items().length,
 		);
 
 		this.#updateRenderedItems();
@@ -262,10 +245,11 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	#updateRenderedItems(): void {
 		const { startIndex, endIndex } = this.#currentRange;
+		const items: unknown[] = this.items();
 		this.renderedItems = [];
 
 		for (let i: number = startIndex; i < endIndex; i++) {
-			this.renderedItems.push({ data: this.items[i], index: i });
+			this.renderedItems.push({ data: items[i], index: i });
 		}
 	}
 
@@ -285,7 +269,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 		this.#ngZone.runOutsideAngular(() => {
 			this.#boundOnScroll = this.#onScroll.bind(this);
-			const scrollTarget: HTMLElement | Window = this.scrollParent || window;
+			const scrollTarget: HTMLElement | Window = this.scrollParent() || window;
 			scrollTarget.addEventListener('scroll', this.#boundOnScroll, { passive: true });
 
 			this.#resizeObserver = new ResizeObserver(() => this.#onResize());
@@ -295,7 +279,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	#removeListeners(): void {
 		if (this.#boundOnScroll) {
-			const scrollTarget: HTMLElement | Window = this.scrollParent || window;
+			const scrollTarget: HTMLElement | Window = this.scrollParent() || window;
 			scrollTarget.removeEventListener('scroll', this.#boundOnScroll);
 			this.#boundOnScroll = null;
 		}
@@ -318,9 +302,9 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			viewportHeight,
 			this.#layout.rowHeight,
 			this.#layout.totalRows,
-			this.bufferSize,
+			this.bufferSize(),
 			this.#layout.columnCount,
-			this.items.length,
+			this.items().length,
 		);
 
 		this.#applyRangeUpdate(newRange);
@@ -356,7 +340,7 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 		const scrolledInto: number = scrollIntoComponent + viewportHeight;
 		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
 
-		if (scrollRatio < this.loadMoreThreshold) {
+		if (scrollRatio < this.loadMoreThreshold()) {
 			return;
 		}
 
@@ -379,16 +363,18 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 	}
 
 	#getScrollTop(): number {
-		if (this.scrollParent) {
-			return this.scrollParent.scrollTop;
+		const parent: HTMLElement | null = this.scrollParent();
+		if (parent) {
+			return parent.scrollTop;
 		}
 
 		return window.scrollY || document.documentElement.scrollTop;
 	}
 
 	#setScrollTop(value: number): void {
-		if (this.scrollParent) {
-			this.scrollParent.scrollTop = value;
+		const parent: HTMLElement | null = this.scrollParent();
+		if (parent) {
+			parent.scrollTop = value;
 			return;
 		}
 
@@ -396,8 +382,9 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 	}
 
 	#getViewportHeight(): number {
-		if (this.scrollParent) {
-			return this.scrollParent.clientHeight;
+		const parent: HTMLElement | null = this.scrollParent();
+		if (parent) {
+			return parent.clientHeight;
 		}
 
 		return window.innerHeight;
