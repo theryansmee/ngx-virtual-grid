@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { NgxVirtualGridComponent, VirtualGridItemDirective } from 'ngx-virtual-grid';
 
 interface DemoItem {
 	id: number;
@@ -8,8 +9,13 @@ interface DemoItem {
 
 @Component({
 	selector: 'app-root',
+	standalone: true,
+	imports: [
+		NgxVirtualGridComponent,
+		VirtualGridItemDirective,
+	],
 	templateUrl: './app.component.html',
-	styleUrls: ['./app.component.scss'],
+	styleUrl: './app.component.scss',
 })
 export class AppComponent {
 	public items: DemoItem[] = [];
@@ -29,10 +35,6 @@ export class AppComponent {
 
 	constructor() {
 		this.#loadItems(200);
-	}
-
-	public trackById(_index: number, item: unknown): number {
-		return (item as DemoItem).id;
 	}
 
 	public onLoadMore(): void {

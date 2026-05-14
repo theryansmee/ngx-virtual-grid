@@ -1,14 +1,13 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { NgxVirtualGridComponent } from './virtual-scroll.component';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 
+/** @deprecated Import NgxVirtualGridComponent and VirtualGridItemDirective directly. */
 @NgModule({
-	declarations: [
+	imports: [
 		NgxVirtualGridComponent,
 		VirtualGridItemDirective,
 	],
-	imports: [CommonModule],
 	exports: [
 		NgxVirtualGridComponent,
 		VirtualGridItemDirective,

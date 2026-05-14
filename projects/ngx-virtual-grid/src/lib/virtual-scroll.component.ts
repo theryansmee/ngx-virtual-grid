@@ -12,12 +12,11 @@ import {
 	OnChanges,
 	OnDestroy,
 	SimpleChanges,
-	TrackByFunction,
 	Inject,
 	PLATFORM_ID,
 	TemplateRef,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
@@ -25,8 +24,10 @@ import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models'
 
 @Component({
 	selector: 'ngx-virtual-grid',
+	standalone: true,
+	imports: [NgTemplateOutlet],
 	templateUrl: './virtual-scroll.component.html',
-	styleUrls: ['./virtual-scroll.component.scss'],
+	styleUrl: './virtual-scroll.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDestroy {
@@ -35,9 +36,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	@Input()
 	public bufferSize: number = 3;
-
-	@Input()
-	public trackBy: TrackByFunction<unknown> | null = null;
 
 	@Input()
 	public loadMoreThreshold: number = 0.8;
@@ -149,14 +147,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 		this.#measureAndInit();
 	}
-
-	public internalTrackBy: (_index: number, item: RenderedItem) => unknown = (_index: number, item: RenderedItem): unknown => {
-		if (this.trackBy) {
-			return this.trackBy(item.index, item.data);
-		}
-
-		return item.index;
-	};
 
 	#handleItemsChange(changes: SimpleChanges): void {
 		if (!changes['items']) {
