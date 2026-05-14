@@ -1,82 +1,105 @@
 # ngx-virtual-grid
 
-A responsive virtual-scrolling grid for Angular. Renders only the visible items using CSS Grid layout with auto-measured dimensions.
+A responsive virtual-scrolling grid for Angular. Fixed-size items, auto-measured dimensions, CSS Grid layout.
+
+[Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
 
 ## Features
 
-- Virtual scrolling for large lists in a grid layout
-- CSS Grid powered - column count is driven by your own CSS (`grid-template-columns`)
-- Auto-measures row height from rendered items (no manual sizing config)
-- Infinite scroll support via `loadMore` event
-- Custom scroll container support
-- `OnPush` change detection
-- SSR safe (no-ops on the server)
+- Virtual scrolling with CSS Grid layout
+- Auto-measures item dimensions from the first rendered row
+- Responsive — adapts to column count changes via CSS
+- Infinite scroll with configurable threshold
+- SSR-safe (no DOM access during server-side rendering)
 
 ## Installation
 
 ```bash
-# Angular 16
-npm install ngx-virtual-grid@angular16
-
-# Angular 15
-npm install ngx-virtual-grid@angular15
-
-# Angular 14
-npm install ngx-virtual-grid@angular14
+npm install @theryansmee/ngx-virtual-grid
 ```
 
-## Version Compatibility
+```bash
+yarn add @theryansmee/ngx-virtual-grid
+```
 
-| Angular | Library version | Install tag |
-|---|---|---|
-| 16.x | `16.x.x` | `@angular16` |
-| 15.x | `15.x.x` | `@angular15` |
-| 14.x | `14.x.x` | `@angular14` |
+## Angular Version Support
+
+Each Angular major version is maintained on its own branch:
+
+| Branch | Angular | Library | npm tag |
+|---|---|---|---|
+| `angular/14` | 14.x | 14.x.x | `angular14` |
+| `angular/15` | 15.x | 15.x.x | `angular15` |
+| `angular/16` | 16.x | 16.x.x | `angular16` |
+| `angular/17` | 17.x | 17.x.x | `angular17` |
+| `angular/18` | 18.x | 18.x.x | `angular18` |
+| `angular/19` | 19.x | 19.x.x | `latest` |
+
+The `main` branch tracks the latest stable version.
 
 ## Usage
 
-### 1. Import the module
+Import the component and directive directly (standalone):
 
 ```typescript
-import { NgxVirtualGridModule } from 'ngx-virtual-grid';
+import { Component } from '@angular/core';
+import { NgxVirtualGridComponent, VirtualGridItemDirective } from '@theryansmee/ngx-virtual-grid';
 
-@NgModule({
-	imports: [NgxVirtualGridModule],
+@Component({
+  selector: 'app-example',
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  template: `
+    <ngx-virtual-grid
+      [items]="items"
+      [bufferSize]="3"
+      [loadMoreThreshold]="0.8"
+      (loadMore)="onLoadMore()">
+
+      <ng-template ngxVirtualGridItem let-item let-index="index">
+        <div class="card">{{ item.name }}</div>
+      </ng-template>
+    </ngx-virtual-grid>
+  `,
+  styles: [`
+    ngx-virtual-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+  `],
 })
-export class AppModule {}
-```
+export class ExampleComponent {
+  items: any[] = [];
 
-### 2. Add the component to your template
-
-```html
-<ngx-virtual-grid
-	class="my-grid"
-	[items]="items"
-	[bufferSize]="3"
-	[trackBy]="trackById"
-	[loadMoreThreshold]="0.8"
-	(loadMore)="onLoadMore()">
-
-	<ng-template ngxVirtualGridItem let-item let-index="index">
-		<div class="card">
-		  #{{ index }} - {{ item.title }}
-		</div>
-	</ng-template>
-</ngx-virtual-grid>
-```
-
-### 3. Define your grid columns with CSS
-
-The component reads column count from `grid-template-columns` on the host element. You control the layout:
-
-```css
-.my-grid {
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: 16px;
+  onLoadMore(): void {
+    // Load more items...
+  }
 }
 ```
 
-The component sets `display: grid` on itself — you only need to define the column template and gap.
+### Grid layout
+
+The component renders as a CSS Grid container. Control the number and size of columns with standard CSS on the `<ngx-virtual-grid>` element:
+
+```css
+ngx-virtual-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+```
+
+The library auto-detects the column count and row height from the computed grid layout.
+
+### Custom scroll parent
+
+By default the component listens for scroll events on `window`. To use a custom scroll container, pass it via the `scrollParent` input:
+
+```html
+<div #scrollContainer style="height: 600px; overflow-y: auto;">
+  <ngx-virtual-grid [items]="items" [scrollParent]="scrollContainer">
+    ...
+  </ngx-virtual-grid>
+</div>
+```
 
 ## API
 
@@ -84,43 +107,34 @@ The component sets `display: grid` on itself — you only need to define the col
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `items` | `unknown[]` | `[]` | The full data array |
-| `bufferSize` | `number` | `3` | Extra rows rendered above/below the viewport |
-| `trackBy` | `TrackByFunction<unknown>` | `null` | Optional track-by function for `*ngFor` |
-| `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0-1) at which `loadMore` fires |
-| `scrollParent` | `HTMLElement` | `null` | Custom scroll container (defaults to `window`) |
+| `items` | `unknown[]` | `[]` | Array of data items to render |
+| `bufferSize` | `number` | `3` | Number of extra rows to render above and below the viewport |
+| `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0–1) at which the `loadMore` event fires |
+| `scrollParent` | `HTMLElement \| null` | `null` | Custom scroll container. Uses `window` if `null` |
 
 ### Outputs
 
 | Output | Type | Description |
 |---|---|---|
-| `loadMore` | `EventEmitter<void>` | Emitted once when the user scrolls past the threshold. Resets when `items.length` changes. |
+| `loadMore` | `void` | Emits when the scroll position crosses the `loadMoreThreshold`. Resets when the `items` array length changes. |
 
 ### Methods
 
 | Method | Description |
 |---|---|
-| `scrollToIndex(index: number)` | Scroll to bring the given item index into view |
+| `scrollToIndex(index: number)` | Scroll to bring the item at `index` into view |
 | `scrollToOffset(px: number)` | Scroll to an absolute pixel offset within the grid |
-| `refresh()` | Force re-measure of row height and column count |
+| `refresh()` | Re-measure dimensions and recalculate layout |
 
-### Template Context
+### Template context
 
-Inside the `ngxVirtualGridItem` template:
+The `ngxVirtualGridItem` template receives:
 
 | Variable | Type | Description |
 |---|---|---|
-| `$implicit` | `unknown` | The item data from the `items` array |
+| `$implicit` | `T` | The data item |
 | `index` | `number` | The item's index in the original array |
-
-## How It Works
-
-1. The component reads `grid-template-columns` from the computed style to determine column count
-2. It renders a small batch of items and measures the actual row height from the DOM
-3. On scroll, it calculates which rows are visible (plus a buffer) and renders only those items
-4. Top and bottom spacer divs maintain the correct total scroll height
-5. On resize, columns and row height are re-measured and the layout recalculates
 
 ## License
 
-UNLICENSED
+MIT
