@@ -1,8 +1,16 @@
-# ngx-virtual-grid workspace
+# ngx-virtual-grid
 
-Monorepo for the `ngx-virtual-grid` Angular library and its demo application.
+A responsive virtual-scrolling grid for Angular. Fixed-size items, auto-measured dimensions, CSS Grid layout.
 
-[Live Demo](https://theryansmee.github.io/ngx-virtual-grid/)
+[Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+
+## Features
+
+- Virtual scrolling with CSS Grid layout
+- Auto-measures item dimensions from the first rendered row
+- Responsive — adapts to column count changes via CSS
+- Infinite scroll with configurable threshold
+- SSR-safe (no DOM access during server-side rendering)
 
 ## Installation
 
@@ -14,32 +22,139 @@ npm install @theryansmee/ngx-virtual-grid
 yarn add @theryansmee/ngx-virtual-grid
 ```
 
-## Project Structure
-
-```
-projects/
-  ngx-virtual-grid/   # The published library
-  demo/                # Demo application for local development
-```
-
 ## Angular Version Support
 
-Each Angular major version is maintained on its own branch and published under a matching library major version:
+Each Angular major version is maintained on its own branch:
 
-| Branch | Angular | Library version | npm tag |
+| Branch | Angular | Library | npm tag |
 |---|---|---|---|
-| `angular/14` | 14.x | `14.x.x` | `angular14` |
-| `angular/15` | 15.x | `15.x.x` | `angular15` |
-| `angular/16` | 16.x | `16.x.x` | `angular16` |
+| `angular/14` | 14.x | 14.x.x | `angular14` |
+| `angular/15` | 15.x | 15.x.x | `angular15` |
+| `angular/16` | 16.x | 16.x.x | `angular16` |
+| `angular/17` | 17.x | 17.x.x | `angular17` |
+| `angular/18` | 18.x | 18.x.x | `latest` |
 
 The `main` branch tracks the latest stable version.
 
+## Usage
+
+### Standalone imports (recommended)
+
+```typescript
+import { Component } from '@angular/core';
+import { NgxVirtualGridComponent, VirtualGridItemDirective } from '@theryansmee/ngx-virtual-grid';
+
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  template: `
+    <ngx-virtual-grid
+      [items]="items"
+      [bufferSize]="3"
+      [loadMoreThreshold]="0.8"
+      (loadMore)="onLoadMore()">
+
+      <ng-template ngxVirtualGridItem let-item let-index="index">
+        <div class="card">{{ item.name }}</div>
+      </ng-template>
+    </ngx-virtual-grid>
+  `,
+  styles: [`
+    ngx-virtual-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+  `],
+})
+export class ExampleComponent {
+  items: any[] = [];
+
+  onLoadMore(): void {
+    // Load more items...
+  }
+}
+```
+
+### NgModule (deprecated)
+
+```typescript
+import { NgxVirtualGridModule } from '@theryansmee/ngx-virtual-grid';
+
+@NgModule({
+  imports: [NgxVirtualGridModule],
+})
+export class AppModule {}
+```
+
+> **Note:** `NgxVirtualGridModule` is deprecated and will be removed in v19. Use standalone imports instead.
+
+### Grid layout
+
+The component renders as a CSS Grid container. Control the number and size of columns with standard CSS on the `<ngx-virtual-grid>` element:
+
+```css
+ngx-virtual-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+```
+
+The library auto-detects the column count and row height from the computed grid layout.
+
+### Custom scroll parent
+
+By default the component listens for scroll events on `window`. To use a custom scroll container, pass it via the `scrollParent` input:
+
+```html
+<div #scrollContainer style="height: 600px; overflow-y: auto;">
+  <ngx-virtual-grid [items]="items" [scrollParent]="scrollContainer">
+    ...
+  </ngx-virtual-grid>
+</div>
+```
+
+## API
+
+### Inputs
+
+| Input | Type | Default | Description |
+|---|---|---|---|
+| `items` | `unknown[]` | `[]` | Array of data items to render |
+| `bufferSize` | `number` | `3` | Number of extra rows to render above and below the viewport |
+| `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0–1) at which the `loadMore` event fires |
+| `scrollParent` | `HTMLElement \| null` | `null` | Custom scroll container. Uses `window` if `null` |
+
+### Outputs
+
+| Output | Type | Description |
+|---|---|---|
+| `loadMore` | `void` | Emits when the scroll position crosses the `loadMoreThreshold`. Resets when the `items` array length changes. |
+
+### Methods
+
+| Method | Description |
+|---|---|
+| `scrollToIndex(index: number)` | Scroll to bring the item at `index` into view |
+| `scrollToOffset(px: number)` | Scroll to an absolute pixel offset within the grid |
+| `refresh()` | Re-measure dimensions and recalculate layout |
+
+### Template context
+
+The `ngxVirtualGridItem` template receives:
+
+| Variable | Type | Description |
+|---|---|---|
+| `$implicit` | `T` | The data item |
+| `index` | `number` | The item's index in the original array |
+
 ## Prerequisites
 
-- Node.js 16.14+ (or 18.x recommended)
-- npm 8+
+- Node.js 18.x
+- npm 9+
+- Angular 18.x
 
-## Getting Started
+## Development
 
 ```bash
 # Install dependencies
@@ -54,7 +169,7 @@ npm start
 
 The demo app runs at `http://localhost:4200/`.
 
-## Available Scripts
+### Available scripts
 
 | Script | Description |
 |---|---|
@@ -66,32 +181,19 @@ The demo app runs at `http://localhost:4200/`.
 | `npm run lint` | Lint all projects |
 | `npm run lint:fix` | Lint and auto-fix all projects |
 
-## Development Workflow
-
-1. Make changes in `projects/ngx-virtual-grid/src/`
-2. Run `npm run build:lib` to rebuild the library
-3. Run `npm start` to test changes in the demo app
-4. Run `npm test` to verify unit tests pass
-5. Run `npm run lint` before committing
-
 ## Publishing
 
 ```bash
-# Build the library
 npm run build:lib
-
-# Navigate to the dist output
 cd dist/ngx-virtual-grid
-
-# Publish with the appropriate dist-tag
-npm publish --tag angular16
+npm publish
 ```
 
-When publishing older Angular version branches, always use the version-specific tag (e.g. `--tag angular14`) so it doesn't become the `latest` tag on npm.
+When publishing older Angular version branches, use the version-specific tag so it doesn't become `latest`:
 
-## Linting
-
-The project uses ESLint with `@angular-eslint` and `@typescript-eslint`. Husky + lint-staged run linting on pre-commit for all staged `.ts` and `.html` files.
+```bash
+npm publish --tag angular17
+```
 
 ## Contributing
 
@@ -99,3 +201,7 @@ The project uses ESLint with `@angular-eslint` and `@typescript-eslint`. Husky +
 2. Follow the existing code style (tabs, explicit types, explicit accessibility modifiers)
 3. Add unit tests for new functionality
 4. Ensure `npm run lint` and `npm run test:ci` pass before opening a PR
+
+## License
+
+MIT
