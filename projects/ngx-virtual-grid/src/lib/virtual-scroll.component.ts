@@ -324,6 +324,12 @@ export class NgxVirtualGridComponent {
 			return;
 		}
 
+		if (this.#contentHeightAtLastLoad > this.#layout.totalContentHeight) {
+			this.#contentHeightAtLastLoad = 0;
+			this.#loadMoreFired = false;
+			this.#scrolledPastEnd = false;
+		}
+
 		const scrolledInto: number = scrollIntoComponent + viewportHeight;
 		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
 
