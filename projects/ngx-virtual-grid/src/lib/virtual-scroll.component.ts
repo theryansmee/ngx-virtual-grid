@@ -74,7 +74,9 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 
 	#loadMoreFired: boolean = false;
 
-	#lastItemCount: number = 0;
+	#scrolledPastEnd: boolean = false;
+
+	#contentHeightAtLastLoad: number = 0;
 
 	#boundOnScroll: (() => void) | null = null;
 
@@ -137,11 +139,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 	}
 
 	#handleItemsChange(newItems: unknown[], directive: VirtualGridItemDirective | undefined): void {
-		if (newItems.length !== this.#lastItemCount) {
-			this.#loadMoreFired = false;
-			this.#lastItemCount = newItems.length;
-		}
-
 		if (!this.#measured && newItems.length > 0 && this.#isBrowser && directive) {
 			this.#measureAndInit();
 			return;
@@ -329,22 +326,42 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnDestroy {
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
-		if (this.#loadMoreFired) {
-			return;
-		}
-
 		if (this.#layout.totalContentHeight <= 0) {
 			return;
 		}
 
 		const scrolledInto: number = scrollIntoComponent + viewportHeight;
-		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
+		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
 
-		if (scrollRatio < this.loadMoreThreshold()) {
+		if (wrapperEndVisible && this.#loadMoreFired) {
+			this.#scrolledPastEnd = true;
+			return;
+		}
+
+		if (this.#scrolledPastEnd && !wrapperEndVisible) {
+			this.#scrolledPastEnd = false;
+			this.#loadMoreFired = false;
+		}
+
+		const pageHeight: number = this.#layout.totalContentHeight - this.#contentHeightAtLastLoad;
+		if (pageHeight <= 0) {
+			return;
+		}
+
+		const pageScrolled: number = scrolledInto - this.#contentHeightAtLastLoad;
+		const pageRatio: number = pageScrolled / pageHeight;
+
+		if (pageRatio < this.loadMoreThreshold()) {
+			this.#loadMoreFired = false;
+			return;
+		}
+
+		if (this.#loadMoreFired) {
 			return;
 		}
 
 		this.#loadMoreFired = true;
+		this.#contentHeightAtLastLoad = this.#layout.totalContentHeight;
 		this.#ngZone.run(() => this.loadMore.emit());
 	}
 
