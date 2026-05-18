@@ -16,7 +16,6 @@ import {
 	inject,
 	effect,
 	signal,
-	linkedSignal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
@@ -56,11 +55,11 @@ export class NgxVirtualGridComponent {
 
 	readonly #destroyRef: DestroyRef = inject(DestroyRef);
 
-	// Reset loadMoreFired when items count changes
-	readonly #loadMoreFired: WritableSignal<boolean> = linkedSignal({
-		source: () => this.items().length,
-		computation: () => false,
-	});
+	#loadMoreFired: boolean = false;
+
+	#scrolledPastEnd: boolean = false;
+
+	#contentHeightAtLastLoad: number = 0;
 
 	#columnCount: number = 0;
 
@@ -321,22 +320,42 @@ export class NgxVirtualGridComponent {
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
-		if (this.#loadMoreFired()) {
-			return;
-		}
-
 		if (this.#layout.totalContentHeight <= 0) {
 			return;
 		}
 
 		const scrolledInto: number = scrollIntoComponent + viewportHeight;
-		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
+		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
 
-		if (scrollRatio < this.loadMoreThreshold()) {
+		if (wrapperEndVisible && this.#loadMoreFired) {
+			this.#scrolledPastEnd = true;
 			return;
 		}
 
-		this.#loadMoreFired.set(true);
+		if (this.#scrolledPastEnd && !wrapperEndVisible) {
+			this.#scrolledPastEnd = false;
+			this.#loadMoreFired = false;
+		}
+
+		const pageHeight: number = this.#layout.totalContentHeight - this.#contentHeightAtLastLoad;
+		if (pageHeight <= 0) {
+			return;
+		}
+
+		const pageScrolled: number = scrolledInto - this.#contentHeightAtLastLoad;
+		const pageRatio: number = pageScrolled / pageHeight;
+
+		if (pageRatio < this.loadMoreThreshold()) {
+			this.#loadMoreFired = false;
+			return;
+		}
+
+		if (this.#loadMoreFired) {
+			return;
+		}
+
+		this.#loadMoreFired = true;
+		this.#contentHeightAtLastLoad = this.#layout.totalContentHeight;
 		this.#ngZone.run(() => this.loadMore.emit());
 	}
 
