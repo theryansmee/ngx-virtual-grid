@@ -196,7 +196,7 @@ export class NgxVirtualGridComponent {
 			const secondRect: DOMRect = secondRowItem.getBoundingClientRect();
 			this.#rowHeight = secondRect.top - firstRect.top;
 		} else {
-			// Only one row available — use item height (no gap info)
+			// Only one row available - use item height (no gap info)
 			this.#rowHeight = this.#itemHeight;
 		}
 

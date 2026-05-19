@@ -1,4 +1,4 @@
-/* To learn more about this file see: https://angular.io/config/tsconfig. */
+/* To learn more about this file see: https://angular.dev/reference/configs/workspace-config */
 {
 	"compileOnSave": false,
 	"compilerOptions": {
@@ -17,15 +17,10 @@
 			]
 		},
 		"declaration": false,
-		"experimentalDecorators": true,
 		"moduleResolution": "bundler",
 		"importHelpers": true,
 		"target": "es2022",
-		"module": "es2022",
-		"lib": [
-			"es2022",
-			"dom"
-		]
+		"module": "es2022"
 	},
 	"angularCompilerOptions": {
 		"enableI18nLegacyMessageIdFormat": false,

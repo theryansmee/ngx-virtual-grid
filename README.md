@@ -8,7 +8,7 @@ A responsive virtual-scrolling grid for Angular. Fixed-size items, auto-measured
 
 - Virtual scrolling with CSS Grid layout
 - Auto-measures item dimensions from the first rendered row
-- Responsive — adapts to column count changes via CSS
+- Responsive - adapts to column count changes via CSS
 - Infinite scroll with configurable threshold
 - Works with both zoned and zoneless Angular apps
 - SSR-safe (no DOM access during server-side rendering)
@@ -35,7 +35,8 @@ Each Angular major version is maintained on its own branch:
 | `angular/17` | 17.x | 17.x.x | `angular17` |
 | `angular/18` | 18.x | 18.x.x | `angular18` |
 | `angular/19` | 19.x | 19.x.x | `angular19` |
-| `angular/20` | 20.x | 20.x.x | `latest` |
+| `angular/20` | 20.x | 20.x.x | `angular20` |
+| `angular/21` | 21.x | 21.x.x | `latest` |
 
 The `main` branch tracks the latest stable version.
 
@@ -111,7 +112,7 @@ By default the component listens for scroll events on `window`. To use a custom 
 |---|---|---|---|
 | `items` | `unknown[]` | `[]` | Array of data items to render |
 | `bufferSize` | `number` | `3` | Number of extra rows to render above and below the viewport |
-| `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0–1) at which the `loadMore` event fires |
+| `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0-1) at which the `loadMore` event fires |
 | `scrollParent` | `HTMLElement \| null` | `null` | Custom scroll container. Uses `window` if `null` |
 
 ### Outputs
@@ -152,9 +153,9 @@ onLoadMore(): void {
 
 ## Prerequisites
 
-- Node.js 20+ or 22+
+- Node.js 20.19+ or 22.12+
 - npm 10+
-- Angular 20.x
+- Angular 21.x
 
 ## Development
 
@@ -194,7 +195,7 @@ npm publish
 When publishing older Angular version branches, use the version-specific tag so it doesn't become `latest`:
 
 ```bash
-npm publish --tag angular19
+npm publish --tag angular20
 ```
 
 ## Contributing
