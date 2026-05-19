@@ -12,9 +12,9 @@ import {
 	OnChanges,
 	OnDestroy,
 	SimpleChanges,
-	Inject,
 	PLATFORM_ID,
 	TemplateRef,
+	inject,
 } from '@angular/core';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
@@ -55,11 +55,13 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	public bottomSpacerHeight: number = 0;
 
-	#ngZone: NgZone;
+	readonly #ngZone: NgZone = inject(NgZone);
 
-	#cdr: ChangeDetectorRef;
+	readonly #cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
-	#hostEl: HTMLElement;
+	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
+
+	readonly #isBrowser: boolean = isPlatformBrowser(inject(PLATFORM_ID));
 
 	#columnCount: number = 0;
 
@@ -75,8 +77,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	#resizeObserver: ResizeObserver | null = null;
 
-	#isBrowser: boolean;
-
 	#loadMoreFired: boolean = false;
 
 	#scrolledPastEnd: boolean = false;
@@ -89,19 +89,6 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 
 	public get itemTemplate(): TemplateRef<unknown> | null {
 		return this.itemDirective?.templateRef ?? null;
-	}
-
-	constructor(
-		ngZone: NgZone,
-		cdr: ChangeDetectorRef,
-		elRef: ElementRef<HTMLElement>,
-		@Inject(PLATFORM_ID)
-		platformId: object,
-	) {
-		this.#ngZone = ngZone;
-		this.#cdr = cdr;
-		this.#isBrowser = isPlatformBrowser(platformId);
-		this.#hostEl = elRef.nativeElement;
 	}
 
 	public ngAfterViewInit(): void {
