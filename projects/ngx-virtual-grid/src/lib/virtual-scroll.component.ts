@@ -362,6 +362,12 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			this.#scrolledPastEnd = false;
 		}
 
+		// Items appended (content grew) while not locked out - re-arm for normal scrolling
+		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad && !this.#scrolledPastEnd) {
+			this.#loadMoreFired = false;
+			this.#contentHeightAtLastLoad = 0;
+		}
+
 		const scrolledInto: number = scrollIntoComponent + viewportHeight;
 		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
 
@@ -375,15 +381,9 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			this.#loadMoreFired = false;
 		}
 
-		const pageHeight: number = this.#layout.totalContentHeight - this.#contentHeightAtLastLoad;
-		if (pageHeight <= 0) {
-			return;
-		}
+		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
 
-		const pageScrolled: number = scrolledInto - this.#contentHeightAtLastLoad;
-		const pageRatio: number = pageScrolled / pageHeight;
-
-		if (pageRatio < this.loadMoreThreshold) {
+		if (scrollRatio < this.loadMoreThreshold) {
 			this.#loadMoreFired = false;
 			return;
 		}
