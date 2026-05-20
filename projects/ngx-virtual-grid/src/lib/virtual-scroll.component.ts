@@ -4,6 +4,7 @@ import {
 	ElementRef,
 	InputSignal,
 	NgZone,
+	PLATFORM_ID,
 	ChangeDetectionStrategy,
 	OutputEmitterRef,
 	Signal,
@@ -17,7 +18,7 @@ import {
 	effect,
 	signal,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
@@ -54,6 +55,8 @@ export class NgxVirtualGridComponent {
 	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
 
 	readonly #destroyRef: DestroyRef = inject(DestroyRef);
+
+	readonly #isBrowser: boolean = isPlatformBrowser(inject(PLATFORM_ID));
 
 	#loadMoreFired: boolean = false;
 
@@ -141,7 +144,7 @@ export class NgxVirtualGridComponent {
 	}
 
 	#measureAndInit(): void {
-		if (!this.itemDirective()) {
+		if (!this.#isBrowser || !this.itemDirective()) {
 			return;
 		}
 

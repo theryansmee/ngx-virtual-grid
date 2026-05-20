@@ -89,6 +89,16 @@
 								"output": ""
 							},
 							{
+								"glob": "robots.txt",
+								"input": "projects/demo/src",
+								"output": ""
+							},
+							{
+								"glob": "sitemap.xml",
+								"input": "projects/demo/src",
+								"output": ""
+							},
+							{
 								"glob": "**/*",
 								"input": "projects/demo/src/assets",
 								"output": "assets"
@@ -97,7 +107,10 @@
 						"styles": [
 							"projects/demo/src/styles.scss"
 						],
-						"scripts": []
+						"scripts": [],
+						"server": "projects/demo/src/main.server.ts",
+						"outputMode": "static",
+						"baseHref": "/ngx-virtual-grid/"
 					},
 					"configurations": {
 						"production": {
