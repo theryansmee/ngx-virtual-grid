@@ -23,6 +23,11 @@ npm install @theryansmee/ngx-virtual-grid
 yarn add @theryansmee/ngx-virtual-grid
 ```
 
+```bash
+pnpm add @theryansmee/ngx-virtual-grid
+```
+
+
 ## Angular Version Support
 
 Each Angular major version is maintained on its own branch:
@@ -150,6 +155,7 @@ onLoadMore(): void {
   this.items.update(current => [...current, ...newItems]);
 }
 ```
+
 
 ## License
 
