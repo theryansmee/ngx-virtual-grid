@@ -1,6 +1,6 @@
 {
 	"name": "@theryansmee/ngx-virtual-grid",
-	"version": "21.0.0",
+	"version": "21.0.1",
 	"description": "A responsive virtual-scrolling grid for Angular with infinite scroll. Fixed-size items, auto-measured dimensions, CSS Grid layout.",
 	"homepage": "https://theryansmee.github.io/ngx-virtual-grid/",
 	"license": "MIT",
