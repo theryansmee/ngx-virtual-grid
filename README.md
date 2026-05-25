@@ -23,6 +23,11 @@ npm install @theryansmee/ngx-virtual-grid
 yarn add @theryansmee/ngx-virtual-grid
 ```
 
+```bash
+pnpm add @theryansmee/ngx-virtual-grid
+```
+
+
 ## Angular Version Support
 
 Each Angular major version is maintained on its own branch:
@@ -153,20 +158,20 @@ onLoadMore(): void {
 ## Prerequisites
 
 - Node.js 20+ or 22+
-- npm 10+
+- pnpm 9+
 - Angular 20.x
 
 ## Development
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Build the library
-npm run build:lib
+pnpm run build:lib
 
 # Start the demo app (builds library first, then serves demo)
-npm start
+pnpm start
 ```
 
 The demo app runs at `http://localhost:4200/`.
@@ -175,26 +180,26 @@ The demo app runs at `http://localhost:4200/`.
 
 | Script | Description |
 |---|---|
-| `npm run build:lib` | Build the library for production |
-| `npm run build:demo` | Build the demo application |
-| `npm start` | Build library + serve demo app |
-| `npm test` | Run library unit tests (watch mode) |
-| `npm run test:ci` | Run library unit tests (single run) |
-| `npm run lint` | Lint all projects |
-| `npm run lint:fix` | Lint and auto-fix all projects |
+| `pnpm run build:lib` | Build the library for production |
+| `pnpm run build:demo` | Build the demo application |
+| `pnpm start` | Build library + serve demo app |
+| `pnpm test` | Run library unit tests (watch mode) |
+| `pnpm run test:ci` | Run library unit tests (single run) |
+| `pnpm run lint` | Lint all projects |
+| `pnpm run lint:fix` | Lint and auto-fix all projects |
 
 ## Publishing
 
 ```bash
-npm run build:lib
+pnpm run build:lib
 cd dist/ngx-virtual-grid
-npm publish
+pnpm publish
 ```
 
 When publishing older Angular version branches, use the version-specific tag so it doesn't become `latest`:
 
 ```bash
-npm publish --tag angular19
+pnpm publish --tag angular19
 ```
 
 ## Contributing
@@ -202,7 +207,7 @@ npm publish --tag angular19
 1. Branch off the appropriate `angular/*` branch for your target Angular version
 2. Follow the existing code style (tabs, explicit types, explicit accessibility modifiers)
 3. Add unit tests for new functionality
-4. Ensure `npm run lint` and `npm run test:ci` pass before opening a PR
+4. Ensure `pnpm run lint` and `pnpm run test:ci` pass before opening a PR
 
 ## License
 
