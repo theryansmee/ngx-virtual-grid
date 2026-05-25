@@ -2,11 +2,12 @@
   "name": "ngx-virtual-grid-workspace",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "ng": "ng",
     "build:lib": "ng build ngx-virtual-grid --configuration production",
     "build:demo": "ng build demo",
-    "start": "npm run build:lib && ng serve demo",
+    "start": "pnpm run build:lib && ng serve demo",
     "test": "ng test ngx-virtual-grid",
     "test:ci": "ng test ngx-virtual-grid --watch=false",
     "lint": "ng lint",
