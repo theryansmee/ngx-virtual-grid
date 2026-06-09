@@ -1,4 +1,4 @@
-import { VisibleRange } from './virtual-scroll.models';
+import { VisibleRangeInterface } from './virtual-scroll.models';
 
 export function calculateVisibleRange(
 	scrollTop: number,
@@ -8,7 +8,7 @@ export function calculateVisibleRange(
 	bufferSize: number,
 	columnCount: number,
 	totalItems: number,
-): VisibleRange {
+): VisibleRangeInterface {
 	if (totalRows === 0 || rowHeight <= 0) {
 		return { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
 	}

@@ -21,7 +21,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
-import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models';
+import { GridLayoutInterface, VisibleRangeInterface, RenderedItemInterface } from './virtual-scroll.models';
 
 @Component({
 	selector: 'ngx-virtual-grid',
@@ -43,7 +43,7 @@ export class NgxVirtualGridComponent {
 
 	public readonly itemDirective: Signal<VirtualGridItemDirective | undefined> = contentChild(VirtualGridItemDirective);
 
-	public readonly renderedItems: WritableSignal<RenderedItem[]> = signal<RenderedItem[]>([]);
+	public readonly renderedItems: WritableSignal<RenderedItemInterface[]> = signal<RenderedItemInterface[]>([]);
 
 	public readonly topSpacerHeight: WritableSignal<number> = signal<number>(0);
 
@@ -69,9 +69,9 @@ export class NgxVirtualGridComponent {
 
 	#measured: boolean = false;
 
-	#layout: GridLayout = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
+	#layout: GridLayoutInterface = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
 
-	#currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
+	#currentRange: VisibleRangeInterface = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
 
 	#resizeObserver: ResizeObserver | null = null;
 
@@ -141,7 +141,7 @@ export class NgxVirtualGridComponent {
 	}
 
 	#measureAndInit(): void {
-		if (!this.itemDirective()) {
+		if (typeof getComputedStyle !== 'function' || !this.itemDirective()) {
 			return;
 		}
 
@@ -151,7 +151,7 @@ export class NgxVirtualGridComponent {
 		// Render enough items for measurement (at least 2 rows)
 		const items: unknown[] = this.items();
 		const measureBatchSize: number = Math.min(items.length, this.#columnCount * 3);
-		const measureItems: RenderedItem[] = [];
+		const measureItems: RenderedItemInterface[] = [];
 		for (let i: number = 0; i < measureBatchSize; i++) {
 			measureItems.push({ data: items[i], index: i });
 		}
@@ -211,10 +211,10 @@ export class NgxVirtualGridComponent {
 			this.items().length,
 		);
 
-		this.#updateVisibleRange();
+		this.#updateVisibleRangeInterface();
 	}
 
-	#updateVisibleRange(): void {
+	#updateVisibleRangeInterface(): void {
 		const viewportHeight: number = this.#getViewportHeight();
 		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
 		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
@@ -229,14 +229,14 @@ export class NgxVirtualGridComponent {
 			this.items().length,
 		);
 
-		this.#updateRenderedItems();
+		this.#updateRenderedItemInterfaces();
 		this.#updateSpacers();
 	}
 
-	#updateRenderedItems(): void {
+	#updateRenderedItemInterfaces(): void {
 		const { startIndex, endIndex } = this.#currentRange;
 		const items: unknown[] = this.items();
-		const newRendered: RenderedItem[] = [];
+		const newRendered: RenderedItemInterface[] = [];
 
 		for (let i: number = startIndex; i < endIndex; i++) {
 			newRendered.push({ data: items[i], index: i });
@@ -289,7 +289,7 @@ export class NgxVirtualGridComponent {
 		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
 		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
 
-		const newRange: VisibleRange = calculateVisibleRange(
+		const newRange: VisibleRangeInterface = calculateVisibleRange(
 			scrollIntoComponent,
 			viewportHeight,
 			this.#layout.rowHeight,
@@ -303,7 +303,7 @@ export class NgxVirtualGridComponent {
 		this.#checkLoadMore(scrollIntoComponent, viewportHeight);
 	}
 
-	#applyRangeUpdate(newRange: VisibleRange): void {
+	#applyRangeUpdate(newRange: VisibleRangeInterface): void {
 		const rangeChanged: boolean =
 			newRange.startRow !== this.#currentRange.startRow ||
 			newRange.endRow !== this.#currentRange.endRow;
@@ -314,7 +314,7 @@ export class NgxVirtualGridComponent {
 
 		this.#ngZone.run(() => {
 			this.#currentRange = newRange;
-			this.#updateRenderedItems();
+			this.#updateRenderedItemInterfaces();
 			this.#updateSpacers();
 		});
 	}
