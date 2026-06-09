@@ -1,11 +1,11 @@
-import { GridLayout } from './virtual-scroll.models';
+import { GridLayoutInterface } from './virtual-scroll.models';
 
 export function calculateGridLayout(
 	columnCount: number,
 	rowHeight: number,
 	itemHeight: number,
 	totalItems: number,
-): GridLayout {
+): GridLayoutInterface {
 	if (columnCount <= 0 || rowHeight <= 0 || totalItems === 0) {
 		return { columnCount: Math.max(1, columnCount), rowHeight, totalRows: 0, totalContentHeight: 0 };
 	}

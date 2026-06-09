@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { NgxVirtualGridComponent, VirtualGridItemDirective } from 'ngx-virtual-grid';
 
-interface DemoItem {
+interface DemoItemInterface {
 	id: number;
 	title: string;
-	color: string;
 }
 
 @Component({
@@ -17,20 +16,28 @@ interface DemoItem {
 	styleUrl: './app.component.scss',
 })
 export class AppComponent {
-	public items: DemoItem[] = [];
+	public mode: 'grid' | 'list' = 'grid';
+
+	public items: DemoItemInterface[] = [];
+
+	public readonly codeSnippet: string = `import { NgxVirtualGridComponent, VirtualGridItemDirective } from '@theryansmee/ngx-virtual-grid';
+
+@Component({
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  template: \`
+    <ngx-virtual-grid [items]="items" (loadMore)="onLoadMore()">
+      <ng-template ngxVirtualGridItem let-item>
+        {{ item.name }}
+      </ng-template>
+    </ngx-virtual-grid>
+  \`,
+  styles: \`ngx-virtual-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }\`,
+})`;
 
 	#nextId: number = 0;
-
-	readonly #colors: string[] = [
-		'#e74c3c',
-		'#3498db',
-		'#2ecc71',
-		'#f39c12',
-		'#9b59b6',
-		'#1abc9c',
-		'#e67e22',
-		'#34495e',
-	];
 
 	constructor() {
 		this.#loadItems(200);
@@ -41,13 +48,12 @@ export class AppComponent {
 	}
 
 	#loadItems(count: number): void {
-		const newItems: DemoItem[] = [];
+		const newItems: DemoItemInterface[] = [];
 
 		for (let i: number = 0; i < count; i++) {
 			newItems.push({
 				id: this.#nextId,
 				title: `Item ${this.#nextId}`,
-				color: this.#colors[this.#nextId % this.#colors.length],
 			});
 			this.#nextId++;
 		}

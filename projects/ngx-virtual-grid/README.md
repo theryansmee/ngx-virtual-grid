@@ -1,24 +1,31 @@
 # ngx-virtual-grid
 
 [![npm version](https://img.shields.io/npm/v/@theryansmee/ngx-virtual-grid.svg)](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+[![npm downloads](https://img.shields.io/npm/dw/@theryansmee/ngx-virtual-grid.svg)](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
 [![license](https://img.shields.io/npm/l/@theryansmee/ngx-virtual-grid.svg)](https://github.com/theryansmee/ngx-virtual-grid/blob/main/LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@theryansmee/ngx-virtual-grid)](https://bundlephobia.com/package/@theryansmee/ngx-virtual-grid)
 
 A responsive virtual-scrolling grid for Angular with built-in infinite scroll. Uses CSS Grid for layout, auto-measures item dimensions, and only renders what's visible.
+
+**Angular CDK's virtual scroller only supports single-column lists.** If you need a responsive grid with virtual scrolling, `ngx-virtual-grid` fills that gap.
 
 [Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
 
 ## Why ngx-virtual-grid?
 
-Angular's CDK virtual scroll only supports single-column lists. If you need a responsive grid with virtual scrolling, you're on your own - the CDK doesn't handle multi-column layouts, and most virtual scroll libraries don't either.
+Angular CDK's `cdk-virtual-scroll-viewport` only handles single-column lists. If you need a responsive multi-column grid with virtual scrolling, you're on your own.
 
-ngx-virtual-grid gives you a real CSS Grid that only renders visible items. You control the layout with standard `grid-template-columns` and `gap` - the library reads the computed grid to figure out column count and row height automatically. No config objects, no pixel math.
+ngx-virtual-grid gives you a real CSS Grid that only renders visible items. You control the layout with standard `grid-template-columns` and `gap` — the library reads the computed grid to figure out column count and row height automatically. No config objects, no pixel math.
+
+It also works as a single-column virtual list — just set `grid-template-columns: 1fr`.
 
 ## Features
 
 - Virtual scrolling with CSS Grid layout
 - Auto-measures item dimensions from the first rendered row
-- Responsive - adapts to column count changes via CSS
+- Responsive — adapts to column count changes via CSS
 - Infinite scroll with configurable threshold
+- Works as a grid or a single-column list
 - Works with both zoned and zoneless Angular apps
 - SSR-safe with prerendering support
 
@@ -29,13 +36,8 @@ npm install @theryansmee/ngx-virtual-grid
 ```
 
 ```bash
-yarn add @theryansmee/ngx-virtual-grid
-```
-
-```bash
 pnpm add @theryansmee/ngx-virtual-grid
 ```
-
 
 ## Angular Version Support
 
@@ -50,7 +52,8 @@ Each Angular major version is maintained on its own branch:
 | `angular/18` | 18.x | 18.x.x | `angular18` |
 | `angular/19` | 19.x | 19.x.x | `angular19` |
 | `angular/20` | 20.x | 20.x.x | `angular20` |
-| `angular/21` | 21.x | 21.x.x | `latest` |
+| `angular/21` | 21.x | 21.x.x | `angular21` |
+| `angular/22` | 22.x | 22.x.x | `latest` |
 
 The `main` branch tracks the latest stable version.
 
@@ -105,6 +108,19 @@ ngx-virtual-grid {
 ```
 
 The library auto-detects the column count and row height from the computed grid layout.
+
+### Single-column list mode
+
+For a virtual scrolling list instead of a grid, use a single column:
+
+```css
+ngx-virtual-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+```
+
+Same component, same API — the layout adapts automatically based on your CSS.
 
 ### Custom scroll parent
 
@@ -164,7 +180,6 @@ onLoadMore(): void {
   this.items.update(current => [...current, ...newItems]);
 }
 ```
-
 
 ## License
 

@@ -26,14 +26,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.22.3
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm run build:lib
 
-      - run: pnpm exec ng build demo --configuration production --base-href /ngx-virtual-grid/
+      - run: pnpm run build:demo
 
       - uses: actions/configure-pages@v5
 

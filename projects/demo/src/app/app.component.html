@@ -1,7 +1,7 @@
 <div class="header">
 	<div>
-		<h1>ngx-virtual-grid demo</h1>
-		<p>{{ items.length }} items loaded. Scroll to load more.</p>
+		<h1>ngx-virtual-grid</h1>
+		<p>A responsive virtual-scrolling grid for Angular. The grid solution Angular CDK doesn't offer.</p>
 	</div>
 	<nav class="header__links">
 		<a href="https://github.com/theryansmee/ngx-virtual-grid" target="_blank" rel="noopener">GitHub</a>
@@ -9,21 +9,39 @@
 	</nav>
 </div>
 
+<div class="controls">
+	<div class="controls__mode">
+		<button
+			[class.active]="mode === 'grid'"
+			(click)="mode = 'grid'">
+			Grid
+		</button>
+		<button
+			[class.active]="mode === 'list'"
+			(click)="mode = 'list'">
+			List
+		</button>
+	</div>
+	<span class="controls__count">{{ items.length }} items loaded</span>
+</div>
+
 <ngx-virtual-grid
-	class="demo-grid"
+	[class]="mode === 'grid' ? 'demo-grid' : 'demo-list'"
 	[items]="items"
 	[bufferSize]="3"
 	[loadMoreThreshold]="0.8"
 	(loadMore)="onLoadMore()">
 
 	<ng-template ngxVirtualGridItem let-item let-index="index">
-
-		<div
-			class="card"
-			[style.background-color]="item.color">
-
+		<div class="card" [attr.data-color]="index % 8">
 			<span class="card__index">#{{ index }}</span>
 			<span class="card__title">{{ item.title }}</span>
 		</div>
 	</ng-template>
 </ngx-virtual-grid>
+
+<section class="quick-start">
+	<h2>Quick start</h2>
+	<pre><code [innerText]="codeSnippet"></code></pre>
+	<p>Toggle between <strong>Grid</strong> and <strong>List</strong> mode above to see both layouts. The component auto-detects column count from your CSS — no configuration needed.</p>
+</section>
