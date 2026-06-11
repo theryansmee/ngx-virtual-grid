@@ -7,23 +7,21 @@
 
 A responsive virtual-scrolling grid for Angular with built-in infinite scroll. Uses CSS Grid for layout, auto-measures item dimensions, and only renders what's visible.
 
-**Angular CDK's virtual scroller only supports single-column lists.** If you need a responsive grid with virtual scrolling, `ngx-virtual-grid` fills that gap.
-
 [Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
 
 ## Why ngx-virtual-grid?
 
 Angular CDK's `cdk-virtual-scroll-viewport` only handles single-column lists. If you need a responsive multi-column grid with virtual scrolling, you're on your own.
 
-ngx-virtual-grid gives you a real CSS Grid that only renders visible items. You control the layout with standard `grid-template-columns` and `gap` — the library reads the computed grid to figure out column count and row height automatically. No config objects, no pixel math.
+ngx-virtual-grid gives you a real CSS Grid that only renders visible items. You control the layout with standard `grid-template-columns` and `gap` - the library reads the computed grid to figure out column count and row height automatically. No config objects, no pixel math.
 
-It also works as a single-column virtual list — just set `grid-template-columns: 1fr`.
+It also works as a single-column virtual list - just set `grid-template-columns: 1fr`.
 
 ## Features
 
 - Virtual scrolling with CSS Grid layout
 - Auto-measures item dimensions from the first rendered row
-- Responsive — adapts to column count changes via CSS
+- Responsive - adapts to column count changes via CSS
 - Infinite scroll with configurable threshold
 - Works as a grid or a single-column list
 - Works with both zoned and zoneless Angular apps
@@ -33,6 +31,10 @@ It also works as a single-column virtual list — just set `grid-template-column
 
 ```bash
 npm install @theryansmee/ngx-virtual-grid
+```
+
+```bash
+yarn add @theryansmee/ngx-virtual-grid
 ```
 
 ```bash
@@ -96,9 +98,11 @@ export class ExampleComponent {
 }
 ```
 
-### Grid layout
+### Grid or list - your call
 
-The component renders as a CSS Grid container. Control the number and size of columns with standard CSS on the `<ngx-virtual-grid>` element:
+The layout is controlled entirely by CSS. The component is a CSS Grid container, so you just set `grid-template-columns` on it like you would any grid.
+
+**Responsive multi-column grid:**
 
 ```css
 ngx-virtual-grid {
@@ -107,11 +111,16 @@ ngx-virtual-grid {
 }
 ```
 
-The library auto-detects the column count and row height from the computed grid layout.
+**Fixed 3-column grid:**
 
-### Single-column list mode
+```css
+ngx-virtual-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+```
 
-For a virtual scrolling list instead of a grid, use a single column:
+**Single-column list:**
 
 ```css
 ngx-virtual-grid {
@@ -120,16 +129,37 @@ ngx-virtual-grid {
 }
 ```
 
-Same component, same API — the layout adapts automatically based on your CSS.
+Same component, same API. The library figures out the column count and row height from your CSS automatically.
 
-### Custom scroll parent
+### Drop it anywhere on the page
 
-By default the component listens for scroll events on `window`. To use a custom scroll container, pass it via the `scrollParent` input:
+You don't need to wrap your entire page in this component. It works alongside other content - just put it wherever you need a virtual list or grid:
+
+```html
+<h1>My Dashboard</h1>
+<p>Some intro text, a navbar, whatever you want up here.</p>
+
+<ngx-virtual-grid [items]="products" (loadMore)="loadMoreProducts()">
+  <ng-template ngxVirtualGridItem let-product>
+    <app-product-card [product]="product" />
+  </ng-template>
+</ngx-virtual-grid>
+
+<footer>Still works down here too.</footer>
+```
+
+By default it listens for scroll events on `window`, so it just works as part of your normal page scroll. No need for a fixed-height wrapper or any special container setup.
+
+### Custom scroll container
+
+If you do want to put it inside a scrollable container (like a panel or sidebar), pass the container element as `scrollParent`:
 
 ```html
 <div #scrollContainer style="height: 600px; overflow-y: auto;">
   <ngx-virtual-grid [items]="items" [scrollParent]="scrollContainer">
-    ...
+    <ng-template ngxVirtualGridItem let-item>
+      <div class="card">{{ item.name }}</div>
+    </ng-template>
   </ngx-virtual-grid>
 </div>
 ```
