@@ -99,6 +99,11 @@
 								"output": ""
 							},
 							{
+								"glob": "404.html",
+								"input": "projects/demo/src",
+								"output": ""
+							},
+							{
 								"glob": "**/*",
 								"input": "projects/demo/src/assets",
 								"output": "assets"
