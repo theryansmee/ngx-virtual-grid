@@ -1,0 +1,68 @@
+<div class="docs-page">
+	<h2>Layouts</h2>
+	<p>
+		The layout is controlled entirely by CSS. The component is a CSS Grid container,
+		so you set <code>grid-template-columns</code> on it like you would any grid.
+		The library reads the computed grid to figure out column count and row height automatically.
+	</p>
+
+	<h3>Responsive Multi-column Grid</h3>
+	<pre><code>ngx-virtual-grid {{ '{' }}
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+{{ '}' }}</code></pre>
+	<p>Columns auto-fill based on available width. Items reflow as the viewport resizes.</p>
+
+	<h3>Fixed Column Grid</h3>
+	<pre><code>ngx-virtual-grid {{ '{' }}
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+{{ '}' }}</code></pre>
+	<p>Always exactly 3 columns regardless of viewport width.</p>
+
+	<h3>Single-column List</h3>
+	<pre><code>ngx-virtual-grid {{ '{' }}
+  grid-template-columns: 1fr;
+  gap: 8px;
+{{ '}' }}</code></pre>
+	<p>
+		Same component, same API. Works as a drop-in replacement for
+		<code>cdk-virtual-scroll-viewport</code> when you only need a single column.
+	</p>
+
+	<h3>Drop It Anywhere on the Page</h3>
+	<p>
+		You don't need to wrap your entire page in this component.
+		It works alongside other content. By default it listens for scroll events on
+		<code>window</code>, so it works as part of your normal page scroll.
+	</p>
+
+	<pre><code>&lt;h1&gt;My Dashboard&lt;/h1&gt;
+&lt;p&gt;Some intro text, a navbar, whatever you want up here.&lt;/p&gt;
+
+&lt;ngx-virtual-grid [items]="products" (loadMore)="loadMore()"&gt;
+  &lt;ng-template ngxVirtualGridItem let-product&gt;
+    &lt;app-product-card [product]="product" /&gt;
+  &lt;/ng-template&gt;
+&lt;/ngx-virtual-grid&gt;
+
+&lt;footer&gt;Still works down here too.&lt;/footer&gt;</code></pre>
+
+	<h3>Custom Scroll Container</h3>
+	<p>
+		If you want to put the grid inside a scrollable container (like a panel or sidebar),
+		pass the container element as <code>scrollParent</code>:
+	</p>
+
+	<pre><code>&lt;div #scrollContainer style="height: 600px; overflow-y: auto;"&gt;
+  &lt;ngx-virtual-grid [items]="items" [scrollParent]="scrollContainer"&gt;
+    &lt;ng-template ngxVirtualGridItem let-item&gt;
+      &lt;div class="card"&gt;{{ '{{' }} item.name {{ '}}' }}&lt;/div&gt;
+    &lt;/ng-template&gt;
+  &lt;/ngx-virtual-grid&gt;
+&lt;/div&gt;</code></pre>
+	<p>
+		This is how the <a href="/demo">demo page</a> works. The grid is placed
+		inside a 600px container instead of using the full window scroll.
+	</p>
+</div>

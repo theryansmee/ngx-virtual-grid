@@ -1,0 +1,96 @@
+@use 'sass:list';
+
+$card-colors: #e74c3c, #3498db, #2ecc71, #f39c12, #9b59b6, #1abc9c, #e67e22, #34495e;
+
+.controls {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 16px;
+
+	&__mode {
+		display: flex;
+		border: 1px solid #e2e8f0;
+		border-radius: 6px;
+		overflow: hidden;
+
+		button {
+			padding: 6px 16px;
+			border: none;
+			background: white;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 500;
+			color: #64748b;
+			transition: background-color 0.15s, color 0.15s;
+
+			&.active {
+				background: #3498db;
+				color: white;
+			}
+
+			&:not(.active):hover {
+				background: #f1f5f9;
+			}
+		}
+	}
+
+	&__count {
+		font-size: 14px;
+		color: #94a3b8;
+	}
+}
+
+.demo-grid {
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 16px;
+}
+
+.demo-list {
+	grid-template-columns: 1fr;
+	gap: 8px;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 160px;
+	border-radius: 8px;
+	color: white;
+	font-weight: bold;
+	user-select: none;
+
+	.demo-list & {
+		height: 56px;
+		flex-direction: row;
+		gap: 12px;
+		border-radius: 6px;
+	}
+
+	&__index {
+		font-size: 12px;
+		opacity: 0.7;
+	}
+
+	&__title {
+		font-size: 18px;
+
+		.demo-list & {
+			font-size: 16px;
+		}
+	}
+}
+
+@for $index from 0 through 7 {
+	.card[data-color="#{$index}"] {
+		background-color: list.nth($card-colors, $index + 1);
+	}
+}
+
+.demo-note {
+	margin-top: 12px;
+	font-size: 13px;
+	color: #94a3b8;
+}

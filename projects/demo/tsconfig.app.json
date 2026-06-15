@@ -12,7 +12,8 @@
 		"src/main.server.ts"
 	],
 	"include": [
-		"src/**/*.d.ts"
+		"src/**/*.d.ts",
+		"src/**/*.ts"
   ],
   "angularCompilerOptions": {
     "extendedDiagnostics": {
