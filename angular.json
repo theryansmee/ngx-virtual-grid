@@ -104,6 +104,11 @@
 								"output": ""
 							},
 							{
+								"glob": "CNAME",
+								"input": "projects/demo/src",
+								"output": ""
+							},
+							{
 								"glob": "**/*",
 								"input": "projects/demo/src/assets",
 								"output": "assets"

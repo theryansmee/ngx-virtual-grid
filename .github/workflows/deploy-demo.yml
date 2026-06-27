@@ -3,6 +3,7 @@ name: Deploy Demo
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -33,7 +34,7 @@ jobs:
 
       - run: pnpm run build:lib
 
-      - run: pnpm run build:demo
+      - run: npx ng build demo --base-href /
 
       - uses: actions/configure-pages@v5
 
