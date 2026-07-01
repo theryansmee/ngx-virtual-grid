@@ -1,6 +1,6 @@
 {
 	"name": "@theryansmee/ngx-virtual-grid",
-	"version": "22.0.0",
+	"version": "22.0.2",
 	"description": "A responsive virtual-scrolling grid for Angular with infinite scroll. CSS Grid layout with virtual scrolling - the grid solution Angular CDK doesn't offer.",
 	"homepage": "https://theryansmee.github.io/ngx-virtual-grid/",
 	"license": "MIT",

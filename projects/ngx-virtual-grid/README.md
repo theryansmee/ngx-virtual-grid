@@ -36,6 +36,10 @@ npm install @theryansmee/ngx-virtual-grid
 ```
 
 ```bash
+yarn add @theryansmee/ngx-virtual-grid
+```
+
+```bash
 pnpm add @theryansmee/ngx-virtual-grid
 ```
 
