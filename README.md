@@ -1,32 +1,38 @@
 # ngx-virtual-grid
 
-A responsive virtual-scrolling grid for Angular. Fixed-size items, auto-measured dimensions, CSS Grid layout.
+[![npm version](https://img.shields.io/npm/v/@theryansmee/ngx-virtual-grid.svg)](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+[![npm downloads](https://img.shields.io/npm/dw/@theryansmee/ngx-virtual-grid.svg)](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+[![license](https://img.shields.io/npm/l/@theryansmee/ngx-virtual-grid.svg)](https://github.com/theryansmee/ngx-virtual-grid/blob/main/LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@theryansmee/ngx-virtual-grid)](https://bundlephobia.com/package/@theryansmee/ngx-virtual-grid)
+
+A responsive virtual-scrolling grid for Angular with built-in infinite scroll. Uses CSS Grid for layout, auto-measures item dimensions, and only renders what's visible.
+
+**Angular CDK's virtual scroller only supports single-column lists.** If you need a responsive grid with virtual scrolling, `ngx-virtual-grid` fills that gap.
 
 [Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+
+## Why ngx-virtual-grid?
+
+Angular CDK's `cdk-virtual-scroll-viewport` only handles single-column lists. If you need a responsive multi-column grid with virtual scrolling, you're on your own.
+
+ngx-virtual-grid gives you a real CSS Grid that only renders visible items. You control the layout with standard `grid-template-columns` and `gap` — the library reads the computed grid to figure out column count and row height automatically. No config objects, no pixel math.
+
+It also works as a single-column virtual list — just set `grid-template-columns: 1fr`.
 
 ## Features
 
 - Virtual scrolling with CSS Grid layout
 - Auto-measures item dimensions from the first rendered row
-- Responsive - adapts to column count changes via CSS
+- Responsive — adapts to column count changes via CSS
 - Infinite scroll with configurable threshold
-- Works with both zoned and zoneless Angular apps
-- SSR-safe (no DOM access during server-side rendering)
+- Works as a grid or a single-column list
+- SSR-safe
 
 ## Installation
 
 ```bash
 npm install @theryansmee/ngx-virtual-grid
 ```
-
-```bash
-yarn add @theryansmee/ngx-virtual-grid
-```
-
-```bash
-pnpm add @theryansmee/ngx-virtual-grid
-```
-
 
 ## Angular Version Support
 
@@ -35,19 +41,20 @@ Each Angular major version is maintained on its own branch:
 | Branch | Angular | Library | npm tag |
 |---|---|---|---|
 | `angular/14` | 14.x | 14.x.x | `angular14` |
-| `angular/15` | 15.x | 15.x.x | `angular15` |
-| `angular/16` | 16.x | 16.x.x | `angular16` |
-| `angular/17` | 17.x | 17.x.x | `angular17` |
-| `angular/18` | 18.x | 18.x.x | `angular18` |
-| `angular/19` | 19.x | 19.x.x | `angular19` |
-| `angular/20` | 20.x | 20.x.x | `angular20` |
-| `angular/21` | 21.x | 21.x.x | `latest` |
+| `angular/15` | 15.x | 15.x.x | `angular21` |
+| `angular/16` | 16.x | 16.x.x | `angular21` |
+| `angular/17` | 17.x | 17.x.x | `angular21` |
+| `angular/18` | 18.x | 18.x.x | `angular21` |
+| `angular/19` | 19.x | 19.x.x | `angular21` |
+| `angular/20` | 20.x | 20.x.x | `angular21` |
+| `angular/21` | 21.x | 21.x.x | `angular21` |
+| `angular/22` | 22.x | 22.x.x | `latest` |
 
 The `main` branch tracks the latest stable version.
 
 ## Usage
 
-Import the component and directive directly (standalone):
+Import the component and directive directly:
 
 ```typescript
 import { Component } from '@angular/core';
@@ -56,37 +63,28 @@ import { NgxVirtualGridComponent, VirtualGridItemDirective } from '@theryansmee/
 @Component({
   selector: 'app-example',
   imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
-  template: `
-    <ngx-virtual-grid
-      [items]="items"
-      [bufferSize]="3"
-      [loadMoreThreshold]="0.8"
-      (loadMore)="onLoadMore()">
-
-      <ng-template ngxVirtualGridItem let-item let-index="index">
-        <div class="card">{{ item.name }}</div>
-      </ng-template>
-    </ngx-virtual-grid>
-  `,
-  styles: [`
-    ngx-virtual-grid {
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-    }
-  `],
+  templateUrl: './example.component.html',
+  styleUrl: './example.component.scss',
 })
-export class ExampleComponent {
-  items: any[] = [];
-
-  onLoadMore(): void {
-    // Load more items...
-  }
-}
+export class ExampleComponent {}
 ```
 
-### Grid layout
+Use the component in your template:
 
-The component renders as a CSS Grid container. Control the number and size of columns with standard CSS on the `<ngx-virtual-grid>` element:
+```html
+<ngx-virtual-grid
+  [items]="items"
+  [bufferSize]="3"
+  [loadMoreThreshold]="0.8"
+  (loadMore)="onLoadMore()">
+
+  <ng-template ngxVirtualGridItem let-item let-index="index">
+    <div class="card">{{ item.name }}</div>
+  </ng-template>
+</ngx-virtual-grid>
+```
+
+Style the grid with CSS:
 
 ```css
 ngx-virtual-grid {
@@ -95,7 +93,22 @@ ngx-virtual-grid {
 }
 ```
 
-The library auto-detects the column count and row height from the computed grid layout.
+### Grid layout
+
+The component renders as a CSS Grid container. Control the number and size of columns with standard CSS on the `<ngx-virtual-grid>` element. The library auto-detects the column count and row height from the computed grid layout.
+
+### Single-column list mode
+
+For a virtual scrolling list instead of a grid, use a single column:
+
+```css
+ngx-virtual-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+```
+
+Same component, same API — the layout adapts automatically based on your CSS.
 
 ### Custom scroll parent
 
@@ -119,7 +132,6 @@ By default the component listens for scroll events on `window`. To use a custom 
 | `bufferSize` | `number` | `3` | Number of extra rows to render above and below the viewport |
 | `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0-1) at which the `loadMore` event fires |
 | `scrollParent` | `HTMLElement \| null` | `null` | Custom scroll container. Uses `window` if `null` |
-
 ### Outputs
 
 | Output | Type | Description |
@@ -143,36 +155,22 @@ The `ngxVirtualGridItem` template receives:
 | `$implicit` | `T` | The data item |
 | `index` | `number` | The item's index in the original array |
 
-### Zoneless apps
-
-The library works with both zoned and zoneless Angular apps. In zoneless mode, the `loadMore` output emits from a raw scroll event listener. If your handler modifies component state, use signals so the view updates:
-
-```typescript
-items = signal<Item[]>([]);
-
-onLoadMore(): void {
-  // Signal write triggers change detection in zoneless mode
-  this.items.update(current => [...current, ...newItems]);
-}
-```
-
 ## Prerequisites
 
-- Node.js 20.19+ or 22.12+
-- pnpm 11+
+- Node.js 18+
 - Angular 21.x
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Build the library
-pnpm run build:lib
+npm run build:lib
 
 # Start the demo app (builds library first, then serves demo)
-pnpm start
+npm start
 ```
 
 The demo app runs at `http://localhost:4200/`.
@@ -181,26 +179,26 @@ The demo app runs at `http://localhost:4200/`.
 
 | Script | Description |
 |---|---|
-| `pnpm run build:lib` | Build the library for production |
-| `pnpm run build:demo` | Build the demo application |
-| `pnpm start` | Build library + serve demo app |
-| `pnpm test` | Run library unit tests (watch mode) |
-| `pnpm run test:ci` | Run library unit tests (single run) |
-| `pnpm run lint` | Lint all projects |
-| `pnpm run lint:fix` | Lint and auto-fix all projects |
+| `npm run build:lib` | Build the library for production |
+| `npm run build:demo` | Build the demo application |
+| `npm start` | Build library + serve demo app |
+| `npm test` | Run library unit tests (watch mode) |
+| `npm run test:ci` | Run library unit tests (single run) |
+| `npm run lint` | Lint all projects |
+| `npm run lint:fix` | Lint and auto-fix all projects |
 
 ## Publishing
 
 ```bash
-pnpm run build:lib
+npm run build:lib
 cd dist/ngx-virtual-grid
-pnpm publish
+npm publish
 ```
 
 When publishing older Angular version branches, use the version-specific tag so it doesn't become `latest`:
 
 ```bash
-pnpm publish --tag angular20
+npm publish --tag angular21
 ```
 
 ## Contributing
@@ -208,7 +206,7 @@ pnpm publish --tag angular20
 1. Branch off the appropriate `angular/*` branch for your target Angular version
 2. Follow the existing code style (tabs, explicit types, explicit accessibility modifiers)
 3. Add unit tests for new functionality
-4. Ensure `pnpm run lint` and `pnpm run test:ci` pass before opening a PR
+4. Ensure `npm run lint` and `npm run test:ci` pass before opening a PR
 
 ## License
 
