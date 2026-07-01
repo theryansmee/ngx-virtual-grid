@@ -242,6 +242,13 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 		this.#updateRenderedItems();
 		this.#updateSpacers();
 		this.#cdr.markForCheck();
+
+		// Defer load-more check so the DOM settles before we measure.
+		// Without this, the synchronous emit → items change → ngOnChanges
+		// chain can break after a single fire.
+		Promise.resolve().then(() => {
+			this.#checkLoadMore(scrollIntoComponent, viewportHeight);
+		});
 	}
 
 	#updateRenderedItems(): void {
@@ -339,9 +346,10 @@ export class NgxVirtualGridComponent implements AfterViewInit, OnChanges, OnDest
 			this.#scrolledPastEnd = false;
 		}
 
-		// Items appended (content grew) while not locked out - re-arm for normal scrolling
-		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad && !this.#scrolledPastEnd) {
+		// Items appended (content grew) — re-arm so we can fire again
+		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad) {
 			this.#loadMoreFired = false;
+			this.#scrolledPastEnd = false;
 			this.#contentHeightAtLastLoad = 0;
 		}
 

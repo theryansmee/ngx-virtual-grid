@@ -1,0 +1,77 @@
+<div class="docs-page">
+	<h2>Getting Started</h2>
+
+	<h3>Installation</h3>
+	<pre><code>npm install &#64;theryansmee/ngx-virtual-grid&#64;angular17</code></pre>
+	<pre><code>yarn add &#64;theryansmee/ngx-virtual-grid&#64;angular17</code></pre>
+
+	<h3>Angular Version Support</h3>
+	<p>Each Angular major version is maintained on its own branch with a matching npm tag.</p>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Angular</th>
+				<th>Library</th>
+				<th>npm tag</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>22.x</td><td>22.x.x</td><td><code>latest</code></td></tr>
+			<tr><td>21.x</td><td>21.x.x</td><td><code>angular21</code></td></tr>
+			<tr><td>20.x</td><td>20.x.x</td><td><code>angular20</code></td></tr>
+			<tr><td>19.x</td><td>19.x.x</td><td><code>angular19</code></td></tr>
+			<tr><td>18.x</td><td>18.x.x</td><td><code>angular18</code></td></tr>
+			<tr><td>17.x</td><td>17.x.x</td><td><code>angular17</code></td></tr>
+			<tr><td>16.x</td><td>16.x.x</td><td><code>angular16</code></td></tr>
+			<tr><td>15.x</td><td>15.x.x</td><td><code>angular15</code></td></tr>
+			<tr><td>14.x</td><td>14.x.x</td><td><code>angular14</code></td></tr>
+		</tbody>
+	</table>
+
+	<p>To install a specific Angular version:</p>
+	<pre><code>npm install &#64;theryansmee/ngx-virtual-grid&#64;angular21</code></pre>
+
+	<h3>Basic Usage</h3>
+	<p>Import the component and directive directly (standalone):</p>
+
+	<pre><code>import {{ '{' }} Component {{ '}' }} from '&#64;angular/core';
+import {{ '{' }} NgxVirtualGridComponent, VirtualGridItemDirective {{ '}' }} from '&#64;theryansmee/ngx-virtual-grid';
+
+&#64;Component({{ '{' }}
+  selector: 'app-example',
+  standalone: true,
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  template: `
+    &lt;ngx-virtual-grid
+      [items]="items"
+      [bufferSize]="3"
+      [loadMoreThreshold]="0.8"
+      (loadMore)="onLoadMore()"&gt;
+
+      &lt;ng-template ngxVirtualGridItem let-item let-index="index"&gt;
+        &lt;div class="card"&gt;{{ '{{' }} item.name {{ '}}' }}&lt;/div&gt;
+      &lt;/ng-template&gt;
+    &lt;/ngx-virtual-grid&gt;
+  `,
+  styles: [`
+    ngx-virtual-grid {{ '{' }}
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    {{ '}' }}
+  `],
+{{ '}' }})
+export class ExampleComponent {{ '{' }}
+  items: any[] = [];
+
+  onLoadMore(): void {{ '{' }}
+    // Fetch and append more items
+  {{ '}' }}
+{{ '}' }}</code></pre>
+
+	<p>
+		The component works as a CSS Grid container. You control the layout
+		with standard <code>grid-template-columns</code> and <code>gap</code> properties.
+		See the <a routerLink="/layouts">Layouts</a> page for more examples.
+	</p>
+</div>
