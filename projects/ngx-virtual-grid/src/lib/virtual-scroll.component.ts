@@ -84,16 +84,14 @@ export class NgxVirtualGridComponent {
 	}
 
 	constructor() {
-		// Handles the synchronous-items case (items available at first render)
+		// items available at first render
 		afterNextRender(() => {
 			if (this.items().length > 0) {
 				this.#measureAndInit();
 			}
 		});
 
-		// Handles the async-items case (items arriving after init) and subsequent changes.
-		// Reading itemDirective() creates a dependency so the effect re-runs when
-		// the content child becomes available.
+		// items arriving after init or changing later
 		effect(() => {
 			const newItems: unknown[] = this.items();
 			const directive: VirtualGridItemDirective | undefined = this.itemDirective();
@@ -145,10 +143,9 @@ export class NgxVirtualGridComponent {
 			return;
 		}
 
-		// Read column count from the actual CSS Grid computed style
 		this.#columnCount = this.#getColumnCountFromCSS();
 
-		// Render enough items for measurement (at least 2 rows)
+		// render enough items for measurement
 		const items: unknown[] = this.items();
 		const measureBatchSize: number = Math.min(items.length, this.#columnCount * 3);
 		const measureItems: RenderedItem[] = [];
@@ -157,10 +154,8 @@ export class NgxVirtualGridComponent {
 		}
 		this.renderedItems.set(measureItems);
 
-		// Force synchronous layout so we can measure
 		void this.#hostEl.offsetHeight;
 
-		// Measure row height from the rendered grid
 		this.#measureRowHeight();
 
 		if (!this.#measured) {
@@ -196,7 +191,7 @@ export class NgxVirtualGridComponent {
 			const secondRect: DOMRect = secondRowItem.getBoundingClientRect();
 			this.#rowHeight = secondRect.top - firstRect.top;
 		} else {
-			// Only one row available — use item height (no gap info)
+			// only one row, use item height (no gap info)
 			this.#rowHeight = this.#itemHeight;
 		}
 
@@ -232,11 +227,11 @@ export class NgxVirtualGridComponent {
 		this.#updateRenderedItems();
 		this.#updateSpacers();
 
-		// Defer load-more check so the DOM settles before we measure.
-		// Without this, the synchronous emit → items change → ngOnChanges
-		// chain can break after a single fire.
+		// defer and re-read scroll position so we get fresh data after DOM settles
 		Promise.resolve().then(() => {
-			this.#checkLoadMore(scrollIntoComponent, viewportHeight);
+			const freshRect: DOMRect = this.#hostEl.getBoundingClientRect();
+			const freshScrollInto: number = Math.max(0, -freshRect.top);
+			this.#checkLoadMore(freshScrollInto, viewportHeight);
 		});
 	}
 
@@ -331,27 +326,30 @@ export class NgxVirtualGridComponent {
 			return;
 		}
 
+		const scrolledInto: number = scrollIntoComponent + viewportHeight;
+		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
+		const itemsDontFillViewport: boolean = this.#layout.totalContentHeight <= viewportHeight;
+
+		// items replaced or reduced, full reset
 		if (this.#contentHeightAtLastLoad > this.#layout.totalContentHeight) {
 			this.#contentHeightAtLastLoad = 0;
 			this.#loadMoreFired = false;
 			this.#scrolledPastEnd = false;
 		}
 
-		// Items appended (content grew) — re-arm so we can fire again
+		// content grew, re-arm (only scroll events clear scrolledPastEnd)
 		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad) {
 			this.#loadMoreFired = false;
-			this.#scrolledPastEnd = false;
 			this.#contentHeightAtLastLoad = 0;
 		}
 
-		const scrolledInto: number = scrollIntoComponent + viewportHeight;
-		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
-
-		if (wrapperEndVisible && this.#loadMoreFired) {
+		// suppress if scrolled past end (unless items dont fill viewport)
+		if (wrapperEndVisible && (this.#loadMoreFired || this.#scrolledPastEnd) && !itemsDontFillViewport) {
 			this.#scrolledPastEnd = true;
 			return;
 		}
 
+		// scrolled back up, clear flag and re-arm
 		if (this.#scrolledPastEnd && !wrapperEndVisible) {
 			this.#scrolledPastEnd = false;
 			this.#loadMoreFired = false;
@@ -378,7 +376,6 @@ export class NgxVirtualGridComponent {
 			return;
 		}
 
-		// Re-read column count and row height from the actual grid
 		this.#columnCount = this.#getColumnCountFromCSS();
 		this.#measureRowHeight();
 
