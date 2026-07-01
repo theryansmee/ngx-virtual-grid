@@ -1,0 +1,33 @@
+<div class="docs-page">
+	<div class="hero">
+		<h2>A responsive virtual-scrolling grid for Angular</h2>
+		<p class="hero__tagline">
+			Angular CDK's virtual scroll only handles single-column lists.
+			ngx-virtual-grid gives you a real CSS Grid that only renders visible items.
+			No config objects, no pixel math.
+		</p>
+		<div class="hero__actions">
+			<a class="btn btn--primary" routerLink="/demo">Try the demo</a>
+			<a class="btn btn--secondary" routerLink="/getting-started">Get started</a>
+		</div>
+	</div>
+
+	<h3>Features</h3>
+	<ul class="features">
+		<li><strong>Virtual scrolling with CSS Grid layout</strong> — only renders what's visible in the viewport</li>
+		<li><strong>Auto-measures item dimensions</strong> — reads computed grid styles to figure out column count and row height</li>
+		<li><strong>Responsive</strong> — adapts to column count changes via CSS, no reconfiguration needed</li>
+		<li><strong>Infinite scroll</strong> — configurable threshold fires a <code>loadMore</code> event</li>
+		<li><strong>Grid or list</strong> — same component, just change your CSS</li>
+		<li><strong>SSR-safe</strong> — guards DOM APIs so it works with Angular Universal</li>
+	</ul>
+
+	<h3>Install</h3>
+	<pre><code>npm install @theryansmee/ngx-virtual-grid@angular15</code></pre>
+
+	<p>
+		Supports Angular 14 through 22. See
+		<a routerLink="/getting-started">Getting Started</a>
+		for version-specific install instructions.
+	</p>
+</div>
