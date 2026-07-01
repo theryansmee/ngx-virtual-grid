@@ -1,43 +1,40 @@
-@use 'sass:list';
-
-$card-colors: #e74c3c, #3498db, #2ecc71, #f39c12, #9b59b6, #1abc9c, #e67e22, #34495e;
-
 .controls {
+	margin-bottom: 16px;
 	display: flex;
 	align-items: center;
 	gap: 16px;
-	margin-bottom: 16px;
 
 	&__mode {
-		display: flex;
-		border: 1px solid #e2e8f0;
+		border: 1px solid var(--color-border);
 		border-radius: 6px;
+		display: flex;
 		overflow: hidden;
 
 		button {
+			background: white;
 			padding: 6px 16px;
 			border: none;
-			background: white;
-			cursor: pointer;
+			display: block;
+			color: var(--color-muted);
 			font-size: 14px;
 			font-weight: 500;
-			color: #64748b;
+			cursor: pointer;
 			transition: background-color 0.15s, color 0.15s;
 
 			&.active {
-				background: #3498db;
+				background: var(--color-accent);
 				color: white;
 			}
 
 			&:not(.active):hover {
-				background: #f1f5f9;
+				background: var(--color-surface);
 			}
 		}
 	}
 
 	&__count {
+		color: var(--color-faint);
 		font-size: 14px;
-		color: #94a3b8;
 	}
 }
 
@@ -52,21 +49,21 @@ $card-colors: #e74c3c, #3498db, #2ecc71, #f39c12, #9b59b6, #1abc9c, #e67e22, #34
 }
 
 .card {
+	height: 160px;
+	border-radius: 8px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	height: 160px;
-	border-radius: 8px;
 	color: white;
 	font-weight: bold;
 	user-select: none;
 
 	.demo-list & {
 		height: 56px;
+		border-radius: 6px;
 		flex-direction: row;
 		gap: 12px;
-		border-radius: 6px;
 	}
 
 	&__index {
@@ -83,14 +80,38 @@ $card-colors: #e74c3c, #3498db, #2ecc71, #f39c12, #9b59b6, #1abc9c, #e67e22, #34
 	}
 }
 
-@for $index from 0 through 7 {
-	.card[data-color="#{$index}"] {
-		background-color: list.nth($card-colors, $index + 1);
-	}
+.card[data-color="0"] {
+	background-color: var(--card-1);
 }
 
-.demo-note {
-	margin-top: 12px;
-	font-size: 13px;
-	color: #94a3b8;
+.card[data-color="1"] {
+	background-color: var(--card-2);
+}
+
+.card[data-color="2"] {
+	background-color: var(--card-3);
+}
+
+.card[data-color="3"] {
+	background-color: var(--card-4);
+}
+
+.card[data-color="4"] {
+	background-color: var(--card-5);
+}
+
+.card[data-color="5"] {
+	background-color: var(--card-6);
+}
+
+.card[data-color="6"] {
+	background-color: var(--card-7);
+}
+
+.card[data-color="7"] {
+	background-color: var(--card-8);
+}
+
+.docs-page {
+	max-width: 100%;
 }
