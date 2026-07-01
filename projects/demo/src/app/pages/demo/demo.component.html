@@ -1,0 +1,47 @@
+<div class="docs-page">
+	<h2>Interactive Demo</h2>
+
+	<p>Toggle between grid and list mode. The same component handles both layouts, controlled entirely by CSS.</p>
+
+	<div class="controls">
+
+		<div class="controls__mode">
+
+			<button
+				[class.active]="mode === 'grid'"
+				(click)="mode = 'grid'">
+				Grid
+			</button>
+
+			<button
+				[class.active]="mode === 'list'"
+				(click)="mode = 'list'">
+				List
+			</button>
+		</div>
+
+		<span class="controls__count">
+			{{ items.length }} items loaded
+		</span>
+	</div>
+
+	<ngx-virtual-grid
+		[class]="mode === 'grid' ? 'demo-grid' : 'demo-list'"
+		[items]="items"
+		[bufferSize]="3"
+		[trackBy]="trackById"
+		[loadMoreThreshold]="0.8"
+		(loadMore)="onLoadMore()">
+
+		<ng-template
+			ngxVirtualGridItem
+			let-item
+			let-index="index">
+
+			<div class="card" [attr.data-color]="index % 8">
+				<span class="card__index">#{{ index }}</span>
+				<span class="card__title">{{ item.title }}</span>
+			</div>
+		</ng-template>
+	</ngx-virtual-grid>
+</div>

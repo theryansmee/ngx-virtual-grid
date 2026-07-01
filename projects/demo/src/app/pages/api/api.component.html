@@ -1,0 +1,113 @@
+<div class="docs-page">
+	<h2>API Reference</h2>
+
+	<h3>Inputs</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Input</th>
+				<th>Type</th>
+				<th>Default</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>items</code></td>
+				<td><code>unknown[]</code></td>
+				<td><code>[]</code></td>
+				<td>Array of data items to render</td>
+			</tr>
+			<tr>
+				<td><code>bufferSize</code></td>
+				<td><code>number</code></td>
+				<td><code>3</code></td>
+				<td>Number of extra rows to render above and below the viewport</td>
+			</tr>
+			<tr>
+				<td><code>trackBy</code></td>
+				<td><code>TrackByFunction | null</code></td>
+				<td><code>null</code></td>
+				<td>Custom track-by function for <code>*ngFor</code></td>
+			</tr>
+			<tr>
+				<td><code>loadMoreThreshold</code></td>
+				<td><code>number</code></td>
+				<td><code>0.8</code></td>
+				<td>Scroll ratio (0-1) at which the <code>loadMore</code> event fires</td>
+			</tr>
+			<tr>
+				<td><code>scrollParent</code></td>
+				<td><code>HTMLElement | null</code></td>
+				<td><code>null</code></td>
+				<td>Custom scroll container. Uses <code>window</code> if <code>null</code></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h3>Outputs</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Output</th>
+				<th>Type</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>loadMore</code></td>
+				<td><code>void</code></td>
+				<td>Emits when the scroll position crosses the <code>loadMoreThreshold</code>. Resets when the <code>items</code> array length changes.</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h3>Methods</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Method</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>scrollToIndex(index: number)</code></td>
+				<td>Scroll to bring the item at the given index into view</td>
+			</tr>
+			<tr>
+				<td><code>scrollToOffset(px: number)</code></td>
+				<td>Scroll to an absolute pixel offset within the grid</td>
+			</tr>
+			<tr>
+				<td><code>refresh()</code></td>
+				<td>Re-measure dimensions and recalculate layout</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h3>Template Context</h3>
+	<p>The <code>ngxVirtualGridItem</code> template receives the following context:</p>
+	<table>
+		<thead>
+			<tr>
+				<th>Variable</th>
+				<th>Type</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>$implicit</code></td>
+				<td><code>T</code></td>
+				<td>The data item</td>
+			</tr>
+			<tr>
+				<td><code>index</code></td>
+				<td><code>number</code></td>
+				<td>The item's index in the original array</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
