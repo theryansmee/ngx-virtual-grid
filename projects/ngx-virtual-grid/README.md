@@ -34,6 +34,14 @@ It also works as a single-column virtual list — just set `grid-template-column
 npm install @theryansmee/ngx-virtual-grid
 ```
 
+```bash
+yarn add @theryansmee/ngx-virtual-grid
+```
+
+```bash
+pnpm add @theryansmee/ngx-virtual-grid
+```
+
 ## Angular Version Support
 
 Each Angular major version is maintained on its own branch:
