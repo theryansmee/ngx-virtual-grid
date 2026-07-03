@@ -36,6 +36,24 @@
 				<td><code>null</code></td>
 				<td>Custom scroll container. Uses <code>window</code> if <code>null</code></td>
 			</tr>
+			<tr>
+				<td><code>page</code></td>
+				<td><code>number</code></td>
+				<td><code>0</code></td>
+				<td>The page number that the first item in <code>items</code> corresponds to. Used with pagination.</td>
+			</tr>
+			<tr>
+				<td><code>pageSize</code></td>
+				<td><code>number</code></td>
+				<td><code>0</code></td>
+				<td>Number of items per page. Enables pagination when &gt; 0. Space above loaded data is calculated from <code>page * pageSize</code>.</td>
+			</tr>
+			<tr>
+				<td><code>loading</code></td>
+				<td><code>boolean</code></td>
+				<td><code>false</code></td>
+				<td>When <code>true</code> and a skeleton template is provided, renders skeleton placeholders in visible slots that don't have data. The skeleton count matches the number of items the virtual scroller would normally render.</td>
+			</tr>
 		</tbody>
 	</table>
 
@@ -54,6 +72,16 @@
 				<td><code>void</code></td>
 				<td>Emits when the scroll position crosses the <code>loadMoreThreshold</code>. Resets when the <code>items</code> array length changes.</td>
 			</tr>
+			<tr>
+				<td><code>pageNeeded</code></td>
+				<td><code>number</code></td>
+				<td>Emits the page number needed when the viewport approaches the top of loaded data. Use <code>loadMore</code> for loading pages below.</td>
+			</tr>
+			<tr>
+				<td><code>pageChanged</code></td>
+				<td><code>number</code></td>
+				<td>Emits the current page number when the viewport center crosses a page boundary. Useful for updating the URL.</td>
+			</tr>
 		</tbody>
 	</table>
 
@@ -71,8 +99,12 @@
 				<td>Scroll to bring the item at the given index into view</td>
 			</tr>
 			<tr>
-				<td><code>scrollToOffset(px: number)</code></td>
+				<td><code>scrollToOffset(pixels: number)</code></td>
 				<td>Scroll to an absolute pixel offset within the grid</td>
+			</tr>
+			<tr>
+				<td><code>scrollToPage(page: number)</code></td>
+				<td>Scroll to the start of the given page</td>
 			</tr>
 			<tr>
 				<td><code>refresh()</code></td>
@@ -104,6 +136,24 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<h3>Skeleton Template</h3>
+	<p>
+		Provide a skeleton template using the <code>ngxVirtualGridSkeleton</code> directive.
+		When the <code>loading</code> input is <code>true</code>, skeleton placeholders are rendered
+		in visible slots that don't have data. The library automatically calculates the correct
+		number of skeletons to fill the viewport.
+	</p>
+	<pre><code>&lt;ngx-virtual-grid [items]="items" [loading]="isLoading"&gt;
+  &lt;ng-template ngxVirtualGridItem let-item&gt;
+    &lt;app-card [data]="item"&gt;&lt;/app-card&gt;
+  &lt;/ng-template&gt;
+
+  &lt;ng-template ngxVirtualGridSkeleton&gt;
+    &lt;app-card-skeleton&gt;&lt;/app-card-skeleton&gt;
+  &lt;/ng-template&gt;
+&lt;/ngx-virtual-grid&gt;</code></pre>
+	<p>The <code>ngxVirtualGridSkeleton</code> template receives <code>$implicit</code> as the global index of the skeleton slot.</p>
 
 	<h3>Zoneless Apps</h3>
 	<p>

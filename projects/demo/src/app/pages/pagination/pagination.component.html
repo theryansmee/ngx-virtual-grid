@@ -1,0 +1,47 @@
+<div class="docs-page">
+	<h2>Pagination Demo</h2>
+	<p>Virtual scrolling with paginated data loading and skeleton loaders. Try <a routerLink="." [queryParams]="{ page: 500 }">?page=500</a>.</p>
+
+	<div class="controls">
+		<div class="controls__mode">
+			<button
+				[class.active]="layout === 'grid'"
+				(click)="onLayoutChange('grid')">
+				Grid
+			</button>
+			<button
+				[class.active]="layout === 'list'"
+				(click)="onLayoutChange('list')">
+				List
+			</button>
+		</div>
+		<span class="controls__count">Page {{ displayPage + 1 }} &middot; {{ items.length }} items loaded</span>
+	</div>
+
+	<ngx-virtual-grid
+		#paginatedGrid
+		[class]="layout === 'grid' ? 'demo-grid' : 'demo-list'"
+		[items]="items"
+		[page]="firstLoadedPage"
+		[pageSize]="pageSize"
+		[loading]="isLoading"
+		[bufferSize]="3"
+		(loadMore)="onLoadMore()"
+		(pageNeeded)="onPageNeeded($event)"
+		(pageChanged)="onPageChanged($event)">
+
+		<ng-template ngxVirtualGridItem let-item let-index="index">
+			<div class="card" [attr.data-color]="index % 8">
+				<span class="card__index">#{{ index }}</span>
+				<span class="card__title">{{ item.title }}</span>
+			</div>
+		</ng-template>
+
+		<ng-template ngxVirtualGridSkeleton>
+			<div class="skeleton-card">
+				<div class="skeleton-card__line skeleton-card__line--short"></div>
+				<div class="skeleton-card__line skeleton-card__line--long"></div>
+			</div>
+		</ng-template>
+	</ngx-virtual-grid>
+</div>

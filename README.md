@@ -25,6 +25,8 @@ It also works as a single-column virtual list — just set `grid-template-column
 - Auto-measures item dimensions from the first rendered row
 - Responsive — adapts to column count changes via CSS
 - Infinite scroll with configurable threshold
+- Pagination support — start at any page, accumulate data as you scroll
+- Skeleton loading — show placeholder items while data loads
 - Works as a grid or a single-column list
 - SSR-safe
 
@@ -58,11 +60,11 @@ Import the component and directive directly:
 
 ```typescript
 import { Component } from '@angular/core';
-import { NgxVirtualGridComponent, VirtualGridItemDirective } from '@theryansmee/ngx-virtual-grid';
+import { NgxVirtualGridComponent, VirtualGridItemDirective, VirtualGridSkeletonDirective } from '@theryansmee/ngx-virtual-grid';
 
 @Component({
   selector: 'app-example',
-  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective, VirtualGridSkeletonDirective],
   templateUrl: './example.component.html',
   styleUrl: './example.component.scss',
 })
@@ -110,6 +112,104 @@ ngx-virtual-grid {
 
 Same component, same API — the layout adapts automatically based on your CSS.
 
+### Pagination
+
+For large datasets where you load pages of data from an API, use the `page` and `pageSize` inputs. The library creates virtual space above loaded data using `page * pageSize` and uses `loadMore` to grow downward — just like infinite scroll.
+
+```typescript
+@Component({
+  // ...
+})
+export class SearchResultsComponent {
+  items: Result[] = [];
+  firstLoadedPage: number = 0;
+  readonly pageSize: number = 50;
+
+  constructor() {
+    // Load initial page (e.g. from URL param)
+    this.loadPage(0);
+  }
+
+  onLoadMore(): void {
+    // loadMore fires when scrolling down — append the next page
+    this.loadPage(this.lastLoadedPage + 1);
+  }
+
+  onPageNeeded(page: number): void {
+    // pageNeeded fires when scrolling up — prepend earlier pages
+    this.loadPage(page);
+  }
+
+  onPageChanged(page: number): void {
+    // Update URL so the user can navigate back to this position
+  }
+
+  loadPage(page: number): void {
+    this.api.getResults(page, this.pageSize).subscribe(response => {
+      if (page < this.firstLoadedPage) {
+        this.items = [...response.items, ...this.items];
+        this.firstLoadedPage = page;
+      } else {
+        this.items = [...this.items, ...response.items];
+      }
+    });
+  }
+}
+```
+
+```html
+<ngx-virtual-grid
+  [items]="items"
+  [page]="firstLoadedPage"
+  [pageSize]="pageSize"
+  (loadMore)="onLoadMore()"
+  (pageNeeded)="onPageNeeded($event)"
+  (pageChanged)="onPageChanged($event)">
+
+  <ng-template ngxVirtualGridItem let-item>
+    <div class="result">{{ item.name }}</div>
+  </ng-template>
+</ngx-virtual-grid>
+```
+
+**How it works:**
+
+- `page` tells the library which page the first item in your array corresponds to
+- The library calculates virtual space above from `page * pageSize`
+- `loadMore` fires when scrolling down approaches the end of loaded items — append the next page
+- `pageNeeded` fires when scrolling up approaches unloaded earlier pages — prepend that page
+- `pageChanged` fires when the viewport center crosses a page boundary — useful for updating the URL
+- Items accumulate as the user scrolls — once loaded, they stay in the array
+- No need to know the total item count — below just grows via `loadMore` like infinite scroll
+
+### Skeleton loading
+
+Show placeholder items while data loads. Provide a skeleton template and set `loading` to `true` — the library renders the right number of skeletons to fill the visible area, matching the grid layout.
+
+```html
+<ngx-virtual-grid
+  [items]="items"
+  [loading]="isLoading"
+  (loadMore)="onLoadMore()">
+
+  <ng-template ngxVirtualGridItem let-item>
+    <app-card [data]="item"></app-card>
+  </ng-template>
+
+  <ng-template ngxVirtualGridSkeleton>
+    <app-card-skeleton></app-card-skeleton>
+  </ng-template>
+</ngx-virtual-grid>
+```
+
+Works with both paginated and non-paginated modes:
+
+- **Non-paginated**: skeletons appear below loaded items when `loading` is `true`
+- **Paginated**: skeletons fill visible slots in virtual space above (unloaded earlier pages) and below (loadMore pending)
+- **Initial load**: when `items` is empty and `loading` is `true`, skeletons fill the viewport and are used for dimension measurement
+
+The skeleton count is calculated automatically — same number of items the virtual scroller would normally render (viewport rows x columns + buffer).
+
 ### Custom scroll parent
 
 By default the component listens for scroll events on `window`. To use a custom scroll container, pass it via the `scrollParent` input:
@@ -132,18 +232,25 @@ By default the component listens for scroll events on `window`. To use a custom 
 | `bufferSize` | `number` | `3` | Number of extra rows to render above and below the viewport |
 | `loadMoreThreshold` | `number` | `0.8` | Scroll ratio (0-1) at which the `loadMore` event fires |
 | `scrollParent` | `HTMLElement \| null` | `null` | Custom scroll container. Uses `window` if `null` |
+| `page` | `number` | `0` | The page number that the first item in `items` corresponds to. Used with pagination. |
+| `pageSize` | `number` | `0` | Number of items per page. Enables pagination when > 0. Space above loaded data is calculated from `page * pageSize`. |
+| `loading` | `boolean` | `false` | When `true` and a skeleton template is provided, renders skeleton placeholders in visible slots that don't have data. |
+
 ### Outputs
 
 | Output | Type | Description |
 |---|---|---|
 | `loadMore` | `void` | Emits when the scroll position crosses the `loadMoreThreshold`. Resets when the `items` array length changes. |
+| `pageNeeded` | `number` | Emits the page number needed when the viewport approaches the top of loaded data. Use `loadMore` for loading pages below. |
+| `pageChanged` | `number` | Emits the current page number when the viewport center crosses a page boundary. Useful for updating the URL. |
 
 ### Methods
 
 | Method | Description |
 |---|---|
 | `scrollToIndex(index: number)` | Scroll to bring the item at `index` into view |
-| `scrollToOffset(px: number)` | Scroll to an absolute pixel offset within the grid |
+| `scrollToOffset(pixels: number)` | Scroll to an absolute pixel offset within the grid |
+| `scrollToPage(page: number)` | Scroll to the start of the given page |
 | `refresh()` | Re-measure dimensions and recalculate layout |
 
 ### Template context

@@ -1,8 +1,8 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 
 @Directive({
-	selector: '[ngxVirtualGridItem]',
+	selector: '[ngxVirtualGridSkeleton]',
 })
-export class VirtualGridItemDirective {
+export class VirtualGridSkeletonDirective {
 	public readonly templateRef: TemplateRef<unknown> = inject(TemplateRef);
 }
