@@ -1,98 +1,38 @@
-<div class="header">
-	<div>
-		<h1>ngx-virtual-grid</h1>
-		<p>A responsive virtual-scrolling grid for Angular. The grid solution Angular CDK doesn't offer.</p>
+<button class="menu-toggle" [class.open]="menuOpen" (click)="menuOpen = !menuOpen" aria-label="Toggle navigation">
+	<span></span>
+	<span></span>
+	<span></span>
+</button>
+
+<aside class="sidebar" [class.open]="menuOpen">
+	<div class="sidebar__header">
+		<a routerLink="/" (click)="closeMenu()">
+			<h1>ngx-virtual-grid</h1>
+		</a>
+		<p>The grid solution Angular CDK doesn't offer.</p>
 	</div>
-	<nav class="header__links">
-		<a href="https://github.com/theryansmee/ngx-virtual-grid" target="_blank" rel="noopener">GitHub</a>
-		<a href="https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid" target="_blank" rel="noopener">npm</a>
+	<nav class="sidebar__nav">
+		<a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Home</a>
+		<a routerLink="/demo" routerLinkActive="active" (click)="closeMenu()">Demo</a>
+		<a routerLink="/pagination" routerLinkActive="active" (click)="closeMenu()">Pagination</a>
+		<a routerLink="/getting-started" routerLinkActive="active" (click)="closeMenu()">Getting Started</a>
+		<a routerLink="/api" routerLinkActive="active" (click)="closeMenu()">API Reference</a>
+		<a routerLink="/layouts" routerLinkActive="active" (click)="closeMenu()">Layouts</a>
 	</nav>
-</div>
-
-<div class="controls">
-	<div class="controls__mode">
-		<button
-			[class.active]="mode === 'grid'"
-			(click)="mode = 'grid'">
-			Grid
-		</button>
-		<button
-			[class.active]="mode === 'list'"
-			(click)="mode = 'list'">
-			List
-		</button>
-	</div>
-	<span class="controls__count">{{ items.length }} items loaded</span>
-</div>
-
-<ngx-virtual-grid
-	[class]="mode === 'grid' ? 'demo-grid' : 'demo-list'"
-	[items]="items"
-	[bufferSize]="3"
-	[loadMoreThreshold]="0.8"
-	(loadMore)="onLoadMore()">
-
-	<ng-template ngxVirtualGridItem let-item let-index="index">
-		<div class="card" [attr.data-color]="index % 8">
-			<span class="card__index">#{{ index }}</span>
-			<span class="card__title">{{ item.title }}</span>
+	<div class="sidebar__footer">
+		<div class="sidebar__links">
+			<a href="https://github.com/theryansmee/ngx-virtual-grid" target="_blank" rel="noopener">GitHub</a>
+			<a href="https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid" target="_blank" rel="noopener">npm</a>
 		</div>
-	</ng-template>
-</ngx-virtual-grid>
-
-<section class="pagination-demo">
-	<h2>Pagination &amp; skeleton loading</h2>
-	<p>
-		Deep-link into a paginated dataset and load pages in both directions as you scroll.
-		Skeleton placeholders show while data is in flight.
-		Try <a href="?page=500">?page=500</a>.
-		Requires <code>22.0.4+</code>, <code>21.0.5+</code>, <code>20.0.7+</code>, or <code>19.0.7+</code>.
-	</p>
-
-	<div class="controls">
-		<span class="controls__count">Page {{ viewingPage() + 1 }} &middot; {{ paginatedItems().length }} items loaded</span>
+		<div class="sidebar__also-by">
+			<span>Also by &#64;theryansmee</span>
+			<a href="https://theryansmee.github.io/ngx-command-palette/" target="_blank" rel="noopener">ngx-command-palette</a>
+		</div>
 	</div>
+</aside>
 
-	<div class="pagination-demo__scroller" #paginationScroller>
-		<ngx-virtual-grid
-			#paginatedGrid
-			class="demo-grid"
-			[items]="paginatedItems()"
-			[page]="firstLoadedPage()"
-			[pageSize]="pageSize"
-			[loading]="paginationLoading()"
-			[bufferSize]="3"
-			[scrollParent]="paginationScroller"
-			(loadMore)="onPaginationLoadMore()"
-			(pageNeeded)="onPageNeeded($event)"
-			(pageChanged)="onPageChanged($event)">
+<div class="backdrop" [class.visible]="menuOpen" (click)="closeMenu()"></div>
 
-			<ng-template ngxVirtualGridItem let-item let-index="index">
-				<div class="card" [attr.data-color]="index % 8">
-					<span class="card__index">#{{ index }}</span>
-					<span class="card__title">{{ item.title }}</span>
-				</div>
-			</ng-template>
-
-			<ng-template ngxVirtualGridSkeleton>
-				<div class="skeleton-card">
-					<div class="skeleton-card__line skeleton-card__line--short"></div>
-					<div class="skeleton-card__line skeleton-card__line--long"></div>
-				</div>
-			</ng-template>
-		</ngx-virtual-grid>
-	</div>
-
-	<pre><code [innerText]="paginationSnippet"></code></pre>
-	<p>
-		Set <code>page</code> to the lowest loaded page and the grid creates virtual space above the data.
-		<code>loadMore</code> appends pages below, <code>pageNeeded</code> asks for pages above,
-		and <code>pageChanged</code> tracks the page in view for the URL.
-	</p>
-</section>
-
-<section class="quick-start">
-	<h2>Quick start</h2>
-	<pre><code [innerText]="codeSnippet"></code></pre>
-	<p>Toggle between <strong>Grid</strong> and <strong>List</strong> mode above to see both layouts. The component auto-detects column count from your CSS - no configuration needed.</p>
-</section>
+<main class="content">
+	<router-outlet />
+</main>
