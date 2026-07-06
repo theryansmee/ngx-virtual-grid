@@ -10,6 +10,10 @@ export const serverRoutes: ServerRoute[] = [
 		renderMode: RenderMode.Prerender,
 	},
 	{
+		path: 'pagination',
+		renderMode: RenderMode.Prerender,
+	},
+	{
 		path: 'getting-started',
 		renderMode: RenderMode.Prerender,
 	},
