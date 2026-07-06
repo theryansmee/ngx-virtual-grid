@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/</loc>
+		<loc>https://ngx-virtual-grid.com/</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>1.0</priority>
 	</url>
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/demo</loc>
+		<loc>https://ngx-virtual-grid.com/demo</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.8</priority>
 	</url>
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/pagination</loc>
+		<loc>https://ngx-virtual-grid.com/pagination</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.8</priority>
 	</url>
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/getting-started</loc>
+		<loc>https://ngx-virtual-grid.com/getting-started</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.9</priority>
 	</url>
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/api</loc>
+		<loc>https://ngx-virtual-grid.com/api</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.9</priority>
 	</url>
 	<url>
-		<loc>https://theryansmee.github.io/ngx-virtual-grid/layouts</loc>
+		<loc>https://ngx-virtual-grid.com/layouts</loc>
 		<lastmod>2026-07-06</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.7</priority>

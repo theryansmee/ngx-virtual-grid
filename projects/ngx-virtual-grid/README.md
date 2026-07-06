@@ -9,7 +9,7 @@ A responsive virtual-scrolling grid for Angular with built-in infinite scroll. U
 
 **Angular CDK's virtual scroller only supports single-column lists.** If you need a responsive grid with virtual scrolling, `ngx-virtual-grid` fills that gap.
 
-[Live Demo](https://theryansmee.github.io/ngx-virtual-grid/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
+[Live Demo](https://ngx-virtual-grid.com/) | [GitHub](https://github.com/theryansmee/ngx-virtual-grid) | [npm](https://www.npmjs.com/package/@theryansmee/ngx-virtual-grid)
 
 ## Why ngx-virtual-grid?
 
