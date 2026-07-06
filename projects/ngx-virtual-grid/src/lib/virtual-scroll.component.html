@@ -3,16 +3,27 @@
 	[style.height.px]="topSpacerHeight">
 </div>
 
-@for (item of renderedItems; track item.index) {
-	<div
-		class="ngx-vg__grid-item"
-		role="listitem"
-		[attr.aria-setsize]="items().length"
-		[attr.aria-posinset]="item.index + 1">
+@for (_ of columnOffsetCells; track $index) {
+	<div class="ngx-vg__offset-cell" aria-hidden="true"></div>
+}
 
-		<ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item.data, index: item.index }">
-		</ng-container>
-	</div>
+@for (item of renderedItems; track item.index) {
+	@if (item.skeleton) {
+		<div class="ngx-vg__grid-item" aria-hidden="true">
+			<ng-container *ngTemplateOutlet="skeletonTemplate; context: { $implicit: item.index }">
+			</ng-container>
+		</div>
+	} @else {
+		<div
+			class="ngx-vg__grid-item"
+			role="listitem"
+			[attr.aria-setsize]="effectiveTotalItems"
+			[attr.aria-posinset]="item.index + 1">
+
+			<ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item.data, index: item.index }">
+			</ng-container>
+		</div>
+	}
 }
 
 <div
