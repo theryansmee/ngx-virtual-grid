@@ -1,0 +1,137 @@
+<div class="docs-page">
+	<h2>Getting Started</h2>
+
+	<h3>Installation</h3>
+	<pre><code>npm install &#64;theryansmee/ngx-virtual-grid</code></pre>
+	<pre><code>yarn add &#64;theryansmee/ngx-virtual-grid</code></pre>
+	<pre><code>pnpm add &#64;theryansmee/ngx-virtual-grid</code></pre>
+
+	<h3>Angular Version Support</h3>
+	<p>Each Angular major version is maintained on its own branch with a matching npm tag.</p>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Angular</th>
+				<th>Library</th>
+				<th>npm tag</th>
+				<th>Pagination &amp; skeletons</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>22.x</td><td>22.x.x</td><td><code>latest</code></td><td><code>22.1.0+</code></td></tr>
+			<tr><td>21.x</td><td>21.x.x</td><td><code>angular21</code></td><td><code>21.1.0+</code></td></tr>
+			<tr><td>20.x</td><td>20.x.x</td><td><code>angular20</code></td><td><code>20.1.0+</code></td></tr>
+			<tr><td>19.x</td><td>19.x.x</td><td><code>angular19</code></td><td><code>19.1.0+</code></td></tr>
+			<tr><td>18.x</td><td>18.x.x</td><td><code>angular18</code></td><td>-</td></tr>
+			<tr><td>17.x</td><td>17.x.x</td><td><code>angular17</code></td><td>-</td></tr>
+			<tr><td>16.x</td><td>16.x.x</td><td><code>angular16</code></td><td>-</td></tr>
+			<tr><td>15.x</td><td>15.x.x</td><td><code>angular15</code></td><td>-</td></tr>
+			<tr><td>14.x</td><td>14.x.x</td><td><code>angular14</code></td><td>-</td></tr>
+		</tbody>
+	</table>
+
+	<p>
+		Pagination and skeleton loading are newer features - they need the minimum
+		library version shown above and are not available on the Angular 14-18 branches.
+	</p>
+
+	<p>To install a specific Angular version:</p>
+	<pre><code>npm install &#64;theryansmee/ngx-virtual-grid</code></pre>
+
+	<h3>Basic Usage</h3>
+	<p>Import the component and directive directly:</p>
+
+	<pre><code>import {{ '{' }} Component {{ '}' }} from '&#64;angular/core';
+import {{ '{' }} NgxVirtualGridComponent, VirtualGridItemDirective {{ '}' }} from '&#64;theryansmee/ngx-virtual-grid';
+
+&#64;Component({{ '{' }}
+  selector: 'app-example',
+  imports: [NgxVirtualGridComponent, VirtualGridItemDirective],
+  template: `
+    &lt;ngx-virtual-grid
+      [items]="items"
+      [bufferSize]="3"
+      [loadMoreThreshold]="0.8"
+      (loadMore)="onLoadMore()"&gt;
+
+      &lt;ng-template ngxVirtualGridItem let-item let-index="index"&gt;
+        &lt;div class="card"&gt;{{ '{{' }} item.name {{ '}}' }}&lt;/div&gt;
+      &lt;/ng-template&gt;
+    &lt;/ngx-virtual-grid&gt;
+  `,
+  styles: [`
+    ngx-virtual-grid {{ '{' }}
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    {{ '}' }}
+  `],
+{{ '}' }})
+export class ExampleComponent {{ '{' }}
+  items: any[] = [];
+
+  onLoadMore(): void {{ '{' }}
+    // Fetch and append more items
+  {{ '}' }}
+{{ '}' }}</code></pre>
+
+	<p>
+		The component works as a CSS Grid container. You control the layout
+		with standard <code>grid-template-columns</code> and <code>gap</code> properties.
+		See the <a routerLink="/layouts">Layouts</a> page for more examples.
+	</p>
+
+	<h3>Skeleton Loading</h3>
+	<p class="version-note">Requires <code>22.1.0+</code>, <code>21.1.0+</code>, <code>20.1.0+</code>, or <code>19.1.0+</code>.</p>
+	<p>
+		Real apps have network latency. Provide a skeleton template with the
+		<code>ngxVirtualGridSkeleton</code> directive and bind <code>loading</code> -
+		the library renders the right number of placeholders to fill the visible area
+		while data is in flight.
+	</p>
+
+	<pre><code>&lt;ngx-virtual-grid [items]="items" [loading]="isLoading" (loadMore)="onLoadMore()"&gt;
+  &lt;ng-template ngxVirtualGridItem let-item&gt;
+    &lt;app-card [data]="item"&gt;&lt;/app-card&gt;
+  &lt;/ng-template&gt;
+
+  &lt;ng-template ngxVirtualGridSkeleton&gt;
+    &lt;app-card-skeleton&gt;&lt;/app-card-skeleton&gt;
+  &lt;/ng-template&gt;
+&lt;/ngx-virtual-grid&gt;</code></pre>
+
+	<h3>Pagination</h3>
+	<p class="version-note">Requires <code>22.1.0+</code>, <code>21.1.0+</code>, <code>20.1.0+</code>, or <code>19.1.0+</code>.</p>
+	<p>
+		For paginated APIs and deep-linking (e.g. <code>?page=8</code>), set
+		<code>page</code> to the lowest loaded page and <code>pageSize</code> to the
+		items per page. The library creates virtual space above the loaded data,
+		emits <code>loadMore</code> to append pages below, <code>pageNeeded</code>
+		to prepend pages above, and <code>pageChanged</code> as the user scrolls
+		between pages.
+	</p>
+
+	<pre><code>&lt;ngx-virtual-grid
+  [items]="items"
+  [page]="firstLoadedPage"
+  [pageSize]="pageSize"
+  [loading]="isLoading"
+  (loadMore)="onLoadMore()"
+  (pageNeeded)="onPageNeeded($event)"
+  (pageChanged)="onPageChanged($event)"&gt;
+  ...
+&lt;/ngx-virtual-grid&gt;</code></pre>
+
+	<p>The expected data-loading pattern:</p>
+	<ul>
+		<li><code>onLoadMore()</code> - append the next page and set <code>isLoading = true</code> while it's in flight</li>
+		<li><code>onPageNeeded(page)</code> - prepend pages down to <code>page</code> and update <code>firstLoadedPage</code></li>
+		<li><code>onPageChanged(page)</code> - update the URL so the position survives a refresh</li>
+		<li>Use <code>scrollToPage(page)</code> after the initial data arrives to position a deep-linked user</li>
+	</ul>
+
+	<p>
+		See the <a routerLink="/pagination">Pagination demo</a> for a working example
+		and the <a routerLink="/api">API reference</a> for exact emission behavior.
+	</p>
+</div>

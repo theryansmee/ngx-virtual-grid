@@ -1,0 +1,35 @@
+<div class="docs-page">
+	<h2>Infinite Scroll Demo</h2>
+	<p>Scroll down to load more items. Toggle between grid and list layout.</p>
+
+	<div class="controls">
+		<div class="controls__mode">
+			<button
+				[class.active]="layout === 'grid'"
+				(click)="onLayoutChange('grid')">
+				Grid
+			</button>
+			<button
+				[class.active]="layout === 'list'"
+				(click)="onLayoutChange('list')">
+				List
+			</button>
+		</div>
+		<span class="controls__count">{{ items.length }} items loaded</span>
+	</div>
+
+	<ngx-virtual-grid
+		[class]="layout === 'grid' ? 'demo-grid' : 'demo-list'"
+		[items]="items"
+		[bufferSize]="3"
+		[loadMoreThreshold]="0.8"
+		(loadMore)="onLoadMore()">
+
+		<ng-template ngxVirtualGridItem let-item let-index="index">
+			<div class="card" [attr.data-color]="index % 8">
+				<span class="card__index">#{{ index }}</span>
+				<span class="card__title">{{ item.title }}</span>
+			</div>
+		</ng-template>
+	</ngx-virtual-grid>
+</div>

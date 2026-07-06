@@ -15,4 +15,5 @@ export interface VisibleRangeInterface {
 export interface RenderedItemInterface<T = unknown> {
 	data: T;
 	index: number;
+	skeleton: boolean;
 }
