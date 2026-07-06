@@ -39,6 +39,15 @@
 	</script>
 </head>
 <body>
+	<script>
+		// GitHub Pages SPA redirect handler
+		(function () {
+			var redirect = new URLSearchParams(window.location.search).get('p');
+			if (redirect) {
+				history.replaceState(null, '', decodeURIComponent(redirect));
+			}
+		})();
+	</script>
 	<app-root></app-root>
 </body>
 </html>
