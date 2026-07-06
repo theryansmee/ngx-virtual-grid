@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://theryansmee.github.io/ngx-virtual-grid/sitemap.xml
+Sitemap: https://ngx-virtual-grid.com/sitemap.xml

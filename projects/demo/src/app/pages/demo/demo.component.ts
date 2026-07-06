@@ -16,23 +16,30 @@ interface DemoItem {
 	styleUrl: './demo.component.scss',
 })
 export class DemoComponent {
-	public mode: 'grid' | 'list' = 'grid';
+	public layout: 'grid' | 'list' = 'grid';
+
 	public items: DemoItem[] = [];
+
+	public readonly fetchSize: number = 50;
 
 	#nextId: number = 0;
 
 	constructor() {
-		this.#loadItems(200);
+		this.#loadItems(this.fetchSize);
+	}
+
+	public onLayoutChange(newLayout: 'grid' | 'list'): void {
+		this.layout = newLayout;
 	}
 
 	public onLoadMore(): void {
-		this.#loadItems(50);
+		this.#loadItems(this.fetchSize);
 	}
 
 	#loadItems(count: number): void {
 		const newItems: DemoItem[] = [];
 
-		for (let index: number = 0; index < count; index++) {
+		for (let i: number = 0; i < count; i++) {
 			newItems.push({
 				id: this.#nextId,
 				title: `Item ${this.#nextId}`,
