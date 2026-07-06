@@ -190,14 +190,12 @@ export class SearchResultsComponent {
 
 **How it works:**
 
-- `page` tells the library which page the first item in your array corresponds to (0-indexed) - keep it set to the lowest loaded page
-- The library calculates virtual space above from `page * pageSize`
+- `page` is the page of the first item in your array (0-indexed). Keep it at the lowest loaded page; the library turns `page * pageSize` into virtual space above
 - `loadMore` fires when scrolling down approaches the end of loaded items - append the next page. The threshold is measured within the loaded data, so deep-linking to a high page doesn't fire it on arrival
-- `pageNeeded` fires when the viewport top nears the top of loaded data, or when a fast scroll leaves it above the loaded data entirely. It emits the earliest page needed to cover the viewport (at most `page - 1`) - prepend down to that page. It re-emits after each `page` change until the viewport is covered
+- `pageNeeded` asks for earlier pages. Normally that means `page - 1` as the user nears the top of loaded data, but a fast scroll that jumps above the loaded data emits the page under the viewport instead - prepend down to it. If more pages are still needed, the grid asks again each time `page` changes
 - Prepending an earlier page never re-triggers `loadMore` - the library detects prepends and keeps its forward-load state
 - `pageChanged` fires when the viewport center crosses a page boundary - useful for updating the URL
-- Items accumulate as the user scrolls - once loaded, they stay in the array
-- No need to know the total item count - below just grows via `loadMore` like infinite scroll
+- Items accumulate as the user scrolls, and you never need to know the total count - the bottom just grows via `loadMore` like a normal infinite scroller
 
 ### Skeleton loading
 
@@ -260,7 +258,7 @@ By default the component listens for scroll events on `window`. To use a custom 
 | Output | Type | Description |
 |---|---|---|
 | `loadMore` | `void` | Emits when the scroll position crosses the `loadMoreThreshold` within the loaded data. Re-arms when more items are appended; prepending an earlier page does not re-arm it. |
-| `pageNeeded` | `number` | Emits the earliest page needed to cover the viewport (at most `page - 1`) when the viewport top comes within one viewport (plus the buffer zone) of the top of loaded data, or is above it. Re-emits after each `page` input change until the viewport is covered. |
+| `pageNeeded` | `number` | Asks for earlier pages: emits `page - 1` when the viewport nears the top of loaded data, or the viewport's own page after a fast scroll jumps above it. Asks again on each `page` change until the viewport is covered. |
 | `pageChanged` | `number` | Emits the current page number when the viewport center crosses a page boundary. Useful for updating the URL. |
 
 ### Methods

@@ -124,7 +124,7 @@ export class ExampleComponent {{ '{' }}
 	<p>The expected data-loading pattern:</p>
 	<ul>
 		<li><code>onLoadMore()</code> - append the next page and set <code>isLoading = true</code> while it's in flight</li>
-		<li><code>onPageNeeded(page)</code> - prepend that page's items and update <code>firstLoadedPage</code></li>
+		<li><code>onPageNeeded(page)</code> - prepend pages down to <code>page</code> and update <code>firstLoadedPage</code></li>
 		<li><code>onPageChanged(page)</code> - update the URL so the position survives a refresh</li>
 		<li>Use <code>scrollToPage(page)</code> after the initial data arrives to position a deep-linked user</li>
 	</ul>

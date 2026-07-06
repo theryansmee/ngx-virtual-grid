@@ -81,7 +81,7 @@
 			<tr>
 				<td><code>pageNeeded</code></td>
 				<td><code>number</code></td>
-				<td>Emits the earliest page needed to cover the viewport (at most <code>page - 1</code>) when the viewport top comes within one viewport (plus the buffer zone) of the top of loaded data, or is above it. Re-emits after each <code>page</code> input change until the viewport is covered. Use <code>loadMore</code> for loading pages below.</td>
+				<td>Asks for earlier pages: emits <code>page - 1</code> when the viewport nears the top of loaded data, or the viewport's own page after a fast scroll jumps above it. Asks again on each <code>page</code> change until the viewport is covered. Use <code>loadMore</code> for pages below.</td>
 			</tr>
 			<tr>
 				<td><code>pageChanged</code></td>

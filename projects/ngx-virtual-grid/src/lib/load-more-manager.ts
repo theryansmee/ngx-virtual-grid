@@ -47,8 +47,10 @@ export function checkLoadMore(
 	const itemsDontFillViewport: boolean = totalContentHeight <= viewportHeight;
 
 	// IMPORTANT: must run BEFORE the loading early-return. Without it, scrolledPastEnd
-	// never gets set while loading=true, and the loaded-data-grew re-arm allows infinite fires.
-	// See fix-ddos-shit.md. Don't move this below the loading check.
+	// never gets set while loading=true, and the loaded-data-grew re-arm allows infinite
+	// fires: fire -> skeletons inflate -> user scrolls into footer -> items land -> re-arm
+	// -> fire again, forever. Regression-tested in the DDoS block of the spec file.
+	// Don't move this below the loading check.
 	if (wrapperEndVisible && loadMoreFired && !itemsDontFillViewport) {
 		scrolledPastEnd = true;
 	}
