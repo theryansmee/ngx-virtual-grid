@@ -23,6 +23,7 @@ import { VirtualGridSkeletonDirective } from './virtual-scroll-skeleton.directiv
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
 import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models';
+import { checkLoadMore, createLoadMoreState, LoadMoreState } from './load-more-manager';
 
 @Component({
 	selector: 'ngx-virtual-grid',
@@ -86,11 +87,7 @@ export class NgxVirtualGridComponent {
 
 	#resizeObserver: ResizeObserver | null = null;
 
-	#loadMoreFired: boolean = false;
-
-	#scrolledPastEnd: boolean = false;
-
-	#contentHeightAtLastLoad: number = 0;
+	#loadMoreState: LoadMoreState = createLoadMoreState();
 
 	#boundOnScroll: (() => void) | null = null;
 
@@ -124,6 +121,9 @@ export class NgxVirtualGridComponent {
 			this.pageSize();
 			this.#lastEmittedPageNeeded = -1;
 			this.#lastEmittedPageChanged = -1;
+			// Reset fire/height tracking so a fresh navigation can trigger loadMore.
+			// Keep scrolledPastEnd — it tracks physical scroll position and guards against the DDoS loop.
+			this.#loadMoreState = { ...this.#loadMoreState, loadMoreFired: false, contentHeightAtLastLoad: 0 };
 			untracked(() => this.#handleItemsChange(newItems, directive));
 		});
 
@@ -446,52 +446,20 @@ export class NgxVirtualGridComponent {
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
-		if (this.#layout.totalContentHeight <= 0) {
-			return;
+		const result = checkLoadMore(
+			scrollIntoComponent,
+			viewportHeight,
+			this.#layout.totalContentHeight,
+			this.loading(),
+			this.loadMoreThreshold(),
+			this.#loadMoreState,
+		);
+
+		this.#loadMoreState = result.state;
+
+		if (result.shouldEmit) {
+			this.#ngZone.run(() => this.loadMore.emit());
 		}
-
-		if (this.loading()) {
-			return;
-		}
-
-		if (this.#contentHeightAtLastLoad > this.#layout.totalContentHeight) {
-			this.#contentHeightAtLastLoad = 0;
-			this.#loadMoreFired = false;
-			this.#scrolledPastEnd = false;
-		}
-
-		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad && !this.#scrolledPastEnd) {
-			this.#loadMoreFired = false;
-			this.#contentHeightAtLastLoad = 0;
-		}
-
-		const scrolledInto: number = scrollIntoComponent + viewportHeight;
-		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
-
-		if (wrapperEndVisible && this.#loadMoreFired) {
-			this.#scrolledPastEnd = true;
-			return;
-		}
-
-		if (this.#scrolledPastEnd && !wrapperEndVisible) {
-			this.#scrolledPastEnd = false;
-			this.#loadMoreFired = false;
-		}
-
-		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
-
-		if (scrollRatio < this.loadMoreThreshold()) {
-			this.#loadMoreFired = false;
-			return;
-		}
-
-		if (this.#loadMoreFired) {
-			return;
-		}
-
-		this.#loadMoreFired = true;
-		this.#contentHeightAtLastLoad = this.#layout.totalContentHeight;
-		this.#ngZone.run(() => this.loadMore.emit());
 	}
 
 	#checkPageNeeded(scrollIntoComponent: number, viewportHeight: number): void {
