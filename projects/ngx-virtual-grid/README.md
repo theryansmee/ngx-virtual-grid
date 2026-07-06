@@ -63,7 +63,7 @@ Each Angular major version is maintained on its own branch:
 
 The `main` branch tracks the latest stable version.
 
-> **Feature availability:** Pagination and skeleton loading require `22.0.4+`, `21.0.5+`, `20.0.7+`, or `19.0.7+`. They are not available on the Angular 14-18 branches.
+> **Feature availability:** Pagination and skeleton loading require `22.1.0+`, `21.1.0+`, `20.1.0+`, or `19.1.0+`. They are not available on the Angular 14-18 branches.
 
 ## Usage
 
@@ -132,7 +132,7 @@ Same component, same API - the layout adapts automatically based on your CSS.
 
 ### Pagination
 
-> Requires `22.0.4+`, `21.0.5+`, `20.0.7+`, or `19.0.7+` (not available on Angular 14-18).
+> Requires `22.1.0+`, `21.1.0+`, `20.1.0+`, or `19.1.0+` (not available on Angular 14-18).
 
 For large datasets where you load pages of data from an API, use the `page` and `pageSize` inputs. The library creates virtual space above loaded data using `page * pageSize` and uses `loadMore` to grow downward - just like infinite scroll.
 
@@ -215,7 +215,7 @@ export class SearchResultsComponent {
 
 ### Skeleton loading
 
-> Requires `22.0.4+`, `21.0.5+`, `20.0.7+`, or `19.0.7+` (not available on Angular 14-18).
+> Requires `22.1.0+`, `21.1.0+`, `20.1.0+`, or `19.1.0+` (not available on Angular 14-18).
 
 Show placeholder items while data loads. Provide a skeleton template and set `loading` to `true` - the library renders the right number of skeletons to fill the visible area, matching the grid layout.
 
