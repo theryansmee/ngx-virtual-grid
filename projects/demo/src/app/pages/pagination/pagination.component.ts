@@ -1,5 +1,6 @@
-import { Component, afterNextRender, inject, viewChild, Signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, inject, viewChild, Signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { NgxVirtualGridComponent, VirtualGridItemDirective, VirtualGridSkeletonDirective } from 'ngx-virtual-grid';
 
 interface DemoItem {
@@ -43,30 +44,28 @@ export class PaginationComponent {
 
 	#loadedPages: Set<number> = new Set();
 
+	// page we still need to scroll to once its data has loaded. also suppresses
+	// pageChanged/loadMore/pageNeeded handlers until the user is positioned.
+	#pendingScrollPage: number | null = null;
+
+	#initialised: boolean = false;
+
 	constructor() {
-		const pageParam: string | null = this.#route.snapshot.queryParamMap.get('page');
-		const parsedPage: number = pageParam !== null ? parseInt(pageParam, 10) : NaN;
+		// subscribe (not snapshot) so clicking the ?page=500 link or editing the URL
+		// re-initialises the demo. same-route navigation reuses this component
+		// instance, so a constructor-only snapshot read would ignore the change.
+		this.#route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params: ParamMap) => {
+			const parsedPage: number = parseInt(params.get('page') ?? '', 10);
+			const targetPage: number = !isNaN(parsedPage) && parsedPage >= 0 ? parsedPage : 0;
 
-		if (!isNaN(parsedPage) && parsedPage >= 0) {
-			this.displayPage = parsedPage;
-		}
+			// ignore the URL updates we write ourselves from onPageChanged
+			if (this.#initialised && targetPage === this.displayPage) {
+				return;
+			}
 
-		if (this.displayPage > 0) {
-			this.#simulateLoad(() => {
-				this.#appendPage(this.displayPage - 1);
-				this.#appendPage(this.displayPage);
-			});
-		} else {
-			this.#simulateLoad(() => {
-				this.#appendPage(0);
-			});
-		}
-
-		if (this.displayPage > 0) {
-			afterNextRender(() => {
-				setTimeout(() => this.paginatedGrid()?.scrollToPage(this.displayPage));
-			});
-		}
+			this.#initialised = true;
+			this.#initialiseForPage(targetPage);
+		});
 	}
 
 	get #maxPage(): number {
@@ -78,6 +77,10 @@ export class PaginationComponent {
 	}
 
 	public onPageChanged(page: number): void {
+		if (this.#pendingScrollPage !== null) {
+			return;
+		}
+
 		this.displayPage = page;
 
 		if (page <= 0) {
@@ -89,6 +92,10 @@ export class PaginationComponent {
 	}
 
 	public onLoadMore(): void {
+		if (this.#pendingScrollPage !== null) {
+			return;
+		}
+
 		const nextPage: number = this.#lastLoadedPage + 1;
 
 		if (nextPage > this.#maxPage) {
@@ -101,12 +108,58 @@ export class PaginationComponent {
 	}
 
 	public onPageNeeded(page: number): void {
-		if (this.#loadedPages.has(page)) {
+		if (this.#pendingScrollPage !== null || this.#loadedPages.has(page)) {
 			return;
 		}
 
 		this.#simulateLoad(() => {
 			this.#loadPagesDownTo(page);
+		});
+	}
+
+	#initialiseForPage(page: number): void {
+		this.displayPage = page;
+		this.firstLoadedPage = 0;
+		this.items = [];
+		this.#lastLoadedPage = -1;
+		this.#loadedPages = new Set();
+		this.#pendingScrollPage = page;
+
+		this.#simulateLoad(() => {
+			if (page > 0) {
+				this.#appendPage(page - 1);
+			}
+
+			this.#appendPage(page);
+			this.#scrollToPendingPage();
+		});
+	}
+
+	// runs AFTER the target page's data has loaded. scrolling any earlier would
+	// position against the small skeleton-only layout, then the layout inflates
+	// when data arrives and the viewport ends up nowhere near the target page.
+	#scrollToPendingPage(): void {
+		setTimeout(() => {
+			const targetPage: number | null = this.#pendingScrollPage;
+
+			if (targetPage === null) {
+				return;
+			}
+
+			const grid: NgxVirtualGridComponent | undefined = this.paginatedGrid();
+
+			if (!grid) {
+				this.#scrollToPendingPage();
+				return;
+			}
+
+			if (targetPage > 0) {
+				grid.scrollToPage(targetPage);
+			} else {
+				window.scrollTo({ top: 0 });
+			}
+
+			this.#pendingScrollPage = null;
 		});
 	}
 

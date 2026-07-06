@@ -24,6 +24,7 @@ import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
 import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models';
 import { checkLoadMore, createLoadMoreState, LoadMoreState } from './load-more-manager';
+import { checkPageTracking, createPageTrackingState, PageTrackingState } from './page-tracker';
 
 @Component({
 	selector: 'ngx-virtual-grid',
@@ -31,6 +32,9 @@ import { checkLoadMore, createLoadMoreState, LoadMoreState } from './load-more-m
 	templateUrl: './virtual-scroll.component.html',
 	styleUrl: './virtual-scroll.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		role: 'list',
+	},
 })
 export class NgxVirtualGridComponent {
 	public readonly items: InputSignal<unknown[]> = input<unknown[]>([]);
@@ -81,19 +85,31 @@ export class NgxVirtualGridComponent {
 
 	#measured: boolean = false;
 
-	#layout: GridLayout = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
+	#layout: GridLayout = {
+		columnCount: 1,
+		rowHeight: 0,
+		totalRows: 0,
+		totalContentHeight: 0,
+	};
 
-	#currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
+	#currentRange: VisibleRange = {
+		startRow: 0,
+		endRow: 0,
+		startIndex: 0,
+		endIndex: 0,
+	};
 
 	#resizeObserver: ResizeObserver | null = null;
 
 	#loadMoreState: LoadMoreState = createLoadMoreState();
 
+	#pageTrackingState: PageTrackingState = createPageTrackingState();
+
+	#previousPage: number = -1;
+
+	#previousGlobalEnd: number = -1;
+
 	#boundOnScroll: (() => void) | null = null;
-
-	#lastEmittedPageNeeded: number = -1;
-
-	#lastEmittedPageChanged: number = -1;
 
 	#listenersAttached: boolean = false;
 
@@ -103,6 +119,10 @@ export class NgxVirtualGridComponent {
 
 	public get skeletonTemplate(): TemplateRef<unknown> | null {
 		return this.skeletonDirective()?.templateRef ?? null;
+	}
+
+	public get effectiveTotalItems(): number {
+		return this.#effectiveTotalItems();
 	}
 
 	constructor() {
@@ -117,14 +137,35 @@ export class NgxVirtualGridComponent {
 		effect(() => {
 			const newItems: unknown[] = this.items();
 			const directive: VirtualGridItemDirective | undefined = this.itemDirective();
-			this.page();
-			this.pageSize();
-			this.#lastEmittedPageNeeded = -1;
-			this.#lastEmittedPageChanged = -1;
-			// Reset fire/height tracking so a fresh navigation can trigger loadMore.
-			// Keep scrolledPastEnd — it tracks physical scroll position and guards against the DDoS loop.
-			this.#loadMoreState = { ...this.#loadMoreState, loadMoreFired: false, contentHeightAtLastLoad: 0 };
+			const currentPage: number = this.page();
+			const currentPageSize: number = this.pageSize();
+
+			// a prepend shifts page down while the end of loaded data stays put:
+			// page * pageSize + items.length is unchanged. re-arming loadMore on a
+			// prepend fires an unwanted forward load if the user sits past the
+			// threshold, so only re-arm when the loaded data end actually moved.
+			const globalEnd: number = currentPageSize > 0 ? currentPage * currentPageSize + newItems.length : newItems.length;
+			const isPrepend: boolean = currentPage < this.#previousPage && globalEnd === this.#previousGlobalEnd;
+			this.#previousPage = currentPage;
+			this.#previousGlobalEnd = globalEnd;
+
+			if (!isPrepend) {
+				// re-arm so the next scroll past threshold can fire loadMore again.
+				// without this, loadMoreFired stays true and loadMore never re-fires.
+				this.#loadMoreState = {
+					...this.#loadMoreState,
+					loadMoreFired: false,
+				};
+			}
+
 			untracked(() => this.#handleItemsChange(newItems, directive));
+
+			if (isPrepend) {
+				// a prepend doesn't change the total content height, so no scroll event
+				// fires when it lands. re-check here or a fast upward scroll into blank
+				// space stalls: the viewport still needs earlier pages but nothing asks.
+				untracked(() => this.#checkPageNeededAfterPrepend());
+			}
 		});
 
 		// loading state changes
@@ -229,10 +270,6 @@ export class NgxVirtualGridComponent {
 
 		this.#recalculateLayout();
 		this.#setupListeners();
-
-		const viewportHeight: number = this.#getViewportHeight();
-		const scrollIntoComponent: number = this.#getScrollIntoComponent();
-		this.#checkLoadMore(scrollIntoComponent, viewportHeight);
 	}
 
 	#getColumnCountFromCSS(): number {
@@ -324,33 +361,43 @@ export class NgxVirtualGridComponent {
 		this.#updateRenderedItems();
 		this.#updateSpacers();
 		this.#changeDetectorRef.markForCheck();
+
+		// if items don't fill the viewport the user can't scroll, so fire proactively
+		if (this.#layout.totalContentHeight <= viewportHeight) {
+			this.#checkLoadMore(scrollIntoComponent, viewportHeight);
+		}
 	}
 
 	#updateRenderedItems(): void {
-		const { startIndex, endIndex } = this.#currentRange;
+		const {
+			startIndex,
+			endIndex,
+		} = this.#currentRange;
 		const items: unknown[] = this.items();
 		const hasSkeleton: boolean = !!this.skeletonDirective() && this.loading();
+		const pageSizeValue: number = this.pageSize();
+		const globalStart: number = pageSizeValue > 0 ? this.page() * pageSizeValue : 0;
+		const globalEnd: number = globalStart + items.length;
 		this.renderedItems = [];
 
-		const pageSizeValue: number = this.pageSize();
-		if (pageSizeValue > 0) {
-			const globalStart: number = this.page() * pageSizeValue;
-			const globalEnd: number = globalStart + items.length;
+		for (let i: number = startIndex; i < endIndex; i++) {
+			const isInLoadedRange: boolean = i >= globalStart && i < globalEnd;
 
-			for (let i: number = startIndex; i < endIndex; i++) {
-				if (i >= globalStart && i < globalEnd) {
-					this.renderedItems.push({ data: items[i - globalStart], index: i, skeleton: false });
-				} else if (hasSkeleton) {
-					this.renderedItems.push({ data: null, index: i, skeleton: true });
-				}
+			if (isInLoadedRange) {
+				this.renderedItems.push({
+					data: items[i - globalStart],
+					index: i,
+					skeleton: false,
+				});
+				continue;
 			}
-		} else {
-			for (let i: number = startIndex; i < endIndex; i++) {
-				if (i < items.length) {
-					this.renderedItems.push({ data: items[i], index: i, skeleton: false });
-				} else if (hasSkeleton) {
-					this.renderedItems.push({ data: null, index: i, skeleton: true });
-				}
+
+			if (hasSkeleton) {
+				this.renderedItems.push({
+					data: null,
+					index: i,
+					skeleton: true,
+				});
 			}
 		}
 	}
@@ -446,10 +493,20 @@ export class NgxVirtualGridComponent {
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
+		// the loaded data window in pixels. skeletons and virtual pages above are
+		// excluded so the threshold measures progress through real loaded items.
+		const pageSizeValue: number = this.pageSize();
+		const globalStart: number = pageSizeValue > 0 ? this.page() * pageSizeValue : 0;
+		const globalEnd: number = globalStart + this.items().length;
+		const loadedStartPx: number = Math.floor(globalStart / this.#layout.columnCount) * this.#layout.rowHeight;
+		const loadedEndPx: number = Math.ceil(globalEnd / this.#layout.columnCount) * this.#layout.rowHeight;
+
 		const result = checkLoadMore(
 			scrollIntoComponent,
 			viewportHeight,
 			this.#layout.totalContentHeight,
+			loadedStartPx,
+			loadedEndPx,
 			this.loading(),
 			this.loadMoreThreshold(),
 			this.#loadMoreState,
@@ -462,50 +519,36 @@ export class NgxVirtualGridComponent {
 		}
 	}
 
+	#checkPageNeededAfterPrepend(): void {
+		if (!this.#measured) {
+			return;
+		}
+
+		this.#checkPageNeeded(this.#getScrollIntoComponent(), this.#getViewportHeight());
+	}
+
 	#checkPageNeeded(scrollIntoComponent: number, viewportHeight: number): void {
-		const pageSizeValue: number = this.pageSize();
+		const result = checkPageTracking(
+			scrollIntoComponent,
+			viewportHeight,
+			this.#layout.rowHeight,
+			this.#layout.columnCount,
+			this.#effectiveTotalItems(),
+			this.pageSize(),
+			this.page(),
+			this.bufferSize(),
+			this.#pageTrackingState,
+		);
 
-		if (pageSizeValue <= 0) {
-			return;
+		this.#pageTrackingState = result.state;
+
+		if (result.emitPageChanged !== null) {
+			this.#ngZone.run(() => this.pageChanged.emit(result.emitPageChanged!));
 		}
 
-		const effectiveTotal: number = this.#effectiveTotalItems();
-		const maxKnownPage: number = Math.max(0, Math.ceil(effectiveTotal / pageSizeValue) - 1);
-
-		// Viewport center → pageChanged (for display/URL)
-		const midpoint: number = scrollIntoComponent + viewportHeight / 2;
-		const midpointRow: number = Math.floor(midpoint / this.#layout.rowHeight);
-		const midpointIndex: number = midpointRow * this.#layout.columnCount;
-		const centerPage: number = Math.max(0, Math.min(Math.floor(midpointIndex / pageSizeValue), maxKnownPage));
-
-		if (centerPage !== this.#lastEmittedPageChanged) {
-			this.#lastEmittedPageChanged = centerPage;
-			this.#ngZone.run(() => this.pageChanged.emit(centerPage));
+		if (result.emitPageNeeded !== null) {
+			this.#ngZone.run(() => this.pageNeeded.emit(result.emitPageNeeded!));
 		}
-
-		// Viewport top edge → pageNeeded (for loading earlier pages when scrolling up)
-		const pageValue: number = this.page();
-
-		if (pageValue <= 0) {
-			return;
-		}
-
-		const globalStart: number = pageValue * pageSizeValue;
-		const topRow: number = Math.floor(scrollIntoComponent / this.#layout.rowHeight);
-		const topIndex: number = Math.max(0, topRow * this.#layout.columnCount);
-
-		if (topIndex > globalStart + pageSizeValue) {
-			return;
-		}
-
-		const neededPage: number = pageValue - 1;
-
-		if (neededPage === this.#lastEmittedPageNeeded) {
-			return;
-		}
-
-		this.#lastEmittedPageNeeded = neededPage;
-		this.#ngZone.run(() => this.pageNeeded.emit(neededPage));
 	}
 
 	#onResize(): void {
@@ -541,15 +584,6 @@ export class NgxVirtualGridComponent {
 		}
 
 		return hostRect.top + (window.scrollY || document.documentElement.scrollTop);
-	}
-
-	#getScrollTop(): number {
-		const parent: HTMLElement | null = this.scrollParent();
-		if (parent) {
-			return parent.scrollTop;
-		}
-
-		return window.scrollY || document.documentElement.scrollTop;
 	}
 
 	#setScrollTop(value: number): void {

@@ -21,7 +21,7 @@ angular/16 (current main)
 
 ---
 
-## Phase 1: Angular 17 — Standalone & Control Flow
+## Phase 1: Angular 17 - Standalone & Control Flow
 
 **Branch:** `angular/17` (from `angular/16`)
 **Library version:** `17.0.0`
@@ -59,13 +59,13 @@ ng generate @angular/core:control-flow
 
 Run these first, then review the output and make manual adjustments as described below.
 
-> This applies to every phase — always run `ng update` first. Phase-specific schematics are noted where available (e.g., `signal-input-migration` in Phase 2).
+> This applies to every phase - always run `ng update` first. Phase-specific schematics are noted where available (e.g., `signal-input-migration` in Phase 2).
 
-### 1.3 Library — Standalone Components
+### 1.3 Library - Standalone Components
 
 Remove `NgxVirtualGridModule` and make both the component and directive standalone.
 
-**`virtual-scroll.component.ts`** — Add `standalone: true` and move imports into the decorator:
+**`virtual-scroll.component.ts`** - Add `standalone: true` and move imports into the decorator:
 ```ts
 @Component({
   selector: 'ngx-virtual-grid',
@@ -77,7 +77,7 @@ Remove `NgxVirtualGridModule` and make both the component and directive standalo
 })
 ```
 
-**`virtual-scroll-item.directive.ts`** — Add `standalone: true`:
+**`virtual-scroll-item.directive.ts`** - Add `standalone: true`:
 ```ts
 @Directive({
   selector: '[ngxVirtualGridItem]',
@@ -85,7 +85,7 @@ Remove `NgxVirtualGridModule` and make both the component and directive standalo
 })
 ```
 
-**`ngx-virtual-grid.module.ts`** — Keep for one version as a deprecated re-export:
+**`ngx-virtual-grid.module.ts`** - Keep for one version as a deprecated re-export:
 ```ts
 /** @deprecated Import NgxVirtualGridComponent and VirtualGridItemDirective directly. */
 @NgModule({
@@ -95,9 +95,9 @@ Remove `NgxVirtualGridModule` and make both the component and directive standalo
 export class NgxVirtualGridModule {}
 ```
 
-### 1.3 Library — New Control Flow Syntax
+### 1.3 Library - New Control Flow Syntax
 
-**`virtual-scroll.component.html`** — Replace `*ngFor` with `@for`:
+**`virtual-scroll.component.html`** - Replace `*ngFor` with `@for`:
 ```html
 <div
   class="ngx-vg__spacer-top"
@@ -122,13 +122,13 @@ export class NgxVirtualGridModule {}
 </div>
 ```
 
-> Note: `*ngTemplateOutlet` stays as-is — there is no control flow replacement for template outlets. The `NgFor` import can be removed from the component imports, but `NgTemplateOutlet` must remain.
+> Note: `*ngTemplateOutlet` stays as-is - there is no control flow replacement for template outlets. The `NgFor` import can be removed from the component imports, but `NgTemplateOutlet` must remain.
 
 **`@for` track expression:** Use `track item.index` directly rather than calling `internalTrackBy()`. `RenderedItem.index` is always unique (it's the original array position), making a function call unnecessary. The consumer-facing `trackBy` input was only used to derive a key from `item.data`, but since `item.index` maps 1:1 to the data array, it's sufficient. The `internalTrackBy` method and the `trackBy` input can be removed (this is a major version bump, so the breaking change is acceptable). If the `trackBy` input is kept for backward compatibility, use `track trackItem(item)` instead and delegate inside `trackItem`.
 
-### 1.4 Demo App — Standalone Bootstrap
+### 1.4 Demo App - Standalone Bootstrap
 
-**`main.ts`** — Replace module bootstrap with standalone:
+**`main.ts`** - Replace module bootstrap with standalone:
 ```ts
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
@@ -136,7 +136,7 @@ import { AppComponent } from './app/app.component';
 bootstrapApplication(AppComponent);
 ```
 
-**`app.component.ts`** — Make standalone, import the library directly:
+**`app.component.ts`** - Make standalone, import the library directly:
 ```ts
 @Component({
   selector: 'app-root',
@@ -149,9 +149,9 @@ bootstrapApplication(AppComponent);
 
 **Delete:** `app.module.ts`, `environment.ts`, `environment.prod.ts` (not needed with new builder).
 
-### 1.5 Build Config — `application` Builder
+### 1.5 Build Config - `application` Builder
 
-**`angular.json`** — Update the demo project's build architect:
+**`angular.json`** - Update the demo project's build architect:
 
 ```jsonc
 "build": {
@@ -184,7 +184,7 @@ bootstrapApplication(AppComponent);
 }
 ```
 
-Update serve config — `browserTarget` → `buildTarget`:
+Update serve config - `browserTarget` → `buildTarget`:
 ```jsonc
 "serve": {
   "builder": "@angular-devkit/build-angular:dev-server",
@@ -222,8 +222,8 @@ export { calculateVisibleRange } from './lib/range-manager';
 
 The `@typescript-eslint` v5→v6 upgrade has breaking rule changes that affect `.eslintrc.json`:
 
-- `@typescript-eslint/comma-dangle` is **deprecated** — migrate to `@stylistic/comma-dangle` (install `@stylistic/eslint-plugin`) or use core `comma-dangle`.
-- `@typescript-eslint/indent` is **deprecated** — migrate to `@stylistic/indent` or remove in favor of a formatter (e.g., Prettier).
+- `@typescript-eslint/comma-dangle` is **deprecated** - migrate to `@stylistic/comma-dangle` (install `@stylistic/eslint-plugin`) or use core `comma-dangle`.
+- `@typescript-eslint/indent` is **deprecated** - migrate to `@stylistic/indent` or remove in favor of a formatter (e.g., Prettier).
 - Several preset config names changed.
 
 Audit every rule in `.eslintrc.json` against the v6 changelog and fix deprecation warnings before proceeding.
@@ -241,7 +241,7 @@ Audit every rule in `.eslintrc.json` against the v6 changelog and fix deprecatio
 
 ---
 
-## Phase 2: Angular 18 — Signal APIs & `inject()`
+## Phase 2: Angular 18 - Signal APIs & `inject()`
 
 **Branch:** `angular/18` (from `angular/17`)
 **Library version:** `18.0.0`
@@ -275,7 +275,7 @@ ng generate @angular/core:inject-migration
 
 Review the output, then adjust manually as described below.
 
-### 2.3 Library — Signal Inputs
+### 2.3 Library - Signal Inputs
 
 Replace all `@Input()` decorators with signal-based `input()` functions.
 
@@ -298,7 +298,7 @@ public readonly loadMoreThreshold = input<number>(0.8);
 public readonly scrollParent = input<HTMLElement | null>(null);
 ```
 
-### 2.3 Library — Signal Output
+### 2.3 Library - Signal Output
 
 ```ts
 // Before:
@@ -308,7 +308,7 @@ public readonly scrollParent = input<HTMLElement | null>(null);
 public readonly loadMore = output<void>();
 ```
 
-### 2.4 Library — Signal Content Query
+### 2.4 Library - Signal Content Query
 
 ```ts
 // Before:
@@ -326,7 +326,7 @@ public get itemTemplate(): TemplateRef<unknown> | null {
 }
 ```
 
-### 2.5 Library — `inject()` Instead of Constructor DI
+### 2.5 Library - `inject()` Instead of Constructor DI
 
 Replace the constructor with `inject()` calls:
 
@@ -348,7 +348,7 @@ readonly #isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
 This eliminates the constructor entirely (or makes it empty).
 
-### 2.7 Library — Replace `ngOnChanges` with `effect()`
+### 2.7 Library - Replace `ngOnChanges` with `effect()`
 
 Since inputs are now signals, replace `ngOnChanges` + `SimpleChanges` with an `effect()` that reacts to `items()` changes:
 
@@ -386,13 +386,13 @@ The `#handleItemsChange` method simplifies since it no longer needs to dig into 
 }
 ```
 
-**Gotcha — `effect()` timing vs `ngAfterViewInit`:** The `effect()` replaces `ngOnChanges`, NOT `ngAfterViewInit`. The `ngAfterViewInit` hook must remain in this phase because measurement (`#measureAndInit`) accesses the DOM (`querySelectorAll`, `getBoundingClientRect`, `getComputedStyle`) and requires the view to be rendered. The `effect()` may fire before the component's view children are in the DOM on the very first change detection cycle.
+**Gotcha - `effect()` timing vs `ngAfterViewInit`:** The `effect()` replaces `ngOnChanges`, NOT `ngAfterViewInit`. The `ngAfterViewInit` hook must remain in this phase because measurement (`#measureAndInit`) accesses the DOM (`querySelectorAll`, `getBoundingClientRect`, `getComputedStyle`) and requires the view to be rendered. The `effect()` may fire before the component's view children are in the DOM on the very first change detection cycle.
 
 The `effect()` handles the deferred initialization case (items arriving after init) because it re-runs when `items()` changes, and by that point the view is already initialized. `ngAfterViewInit` handles the eager initialization case (items available at component creation).
 
 Both are needed in this phase. `ngAfterViewInit` is replaced with `afterNextRender` in Phase 3.
 
-### 2.7 Library — Update All `this.items` References
+### 2.7 Library - Update All `this.items` References
 
 Since `items` is now a signal, every reference to `this.items` must become `this.items()`:
 - `this.items.length` → `this.items().length`
@@ -415,7 +415,7 @@ Key places:
 
 Update the demo component to align with new patterns:
 - Use `inject()` if any DI is needed
-- The demo template references to `items.length` become `items().length` if you also make the demo use signals (optional — only the library is published)
+- The demo template references to `items.length` become `items().length` if you also make the demo use signals (optional - only the library is published)
 
 ### 2.9 Library `package.json`
 
@@ -430,7 +430,7 @@ Update the demo component to align with new patterns:
 
 ---
 
-## Phase 3: Angular 19 — Standalone Default & Cleanup
+## Phase 3: Angular 19 - Standalone Default & Cleanup
 
 **Branch:** `angular/19` (from `angular/18`)
 **Library version:** `19.0.0`
@@ -450,7 +450,7 @@ Update the demo component to align with new patterns:
 
 **Node.js requirement:** 18.19+ or 20.11+ or 22.0+
 
-### 3.2 Library — Remove `standalone: true`
+### 3.2 Library - Remove `standalone: true`
 
 In Angular 19, `standalone: true` is the default. Remove it from both the component and directive decorators to reduce boilerplate:
 
@@ -467,14 +467,14 @@ In Angular 19, `standalone: true` is the default. Remove it from both the compon
 })
 ```
 
-### 3.3 Library — Delete `NgxVirtualGridModule`
+### 3.3 Library - Delete `NgxVirtualGridModule`
 
 The module was deprecated in v17. Remove it entirely:
 
 - **Delete** `ngx-virtual-grid.module.ts`
 - **Remove** the module re-export from `public-api.ts`
 
-### 3.4 Library — `afterNextRender` for Measurement
+### 3.4 Library - `afterNextRender` for Measurement
 
 Replace `ngAfterViewInit` with `afterNextRender` for the measurement/initialization logic. This is SSR-safe by design and eliminates the need for `isPlatformBrowser` checks:
 
@@ -493,11 +493,11 @@ constructor() {
 
 Remove the `#isBrowser` field and the `isPlatformBrowser` import. Remove the `PLATFORM_ID` injection. Remove the `AfterViewInit` interface and `ngAfterViewInit` method.
 
-**Gotcha — `afterNextRender` fires only once.** If `items()` is empty on first render (e.g., async data loading), the callback exits early and never fires again. This is fine because the `effect()` from Phase 2 handles the deferred case — it re-runs when `items()` changes and calls `#measureAndInit()` if not yet measured. By the time the effect re-runs from an input change, the DOM is guaranteed to be available (the view was already initialized on the first render).
+**Gotcha - `afterNextRender` fires only once.** If `items()` is empty on first render (e.g., async data loading), the callback exits early and never fires again. This is fine because the `effect()` from Phase 2 handles the deferred case - it re-runs when `items()` changes and calls `#measureAndInit()` if not yet measured. By the time the effect re-runs from an input change, the DOM is guaranteed to be available (the view was already initialized on the first render).
 
 In practice, `afterNextRender` handles the synchronous-items case, and the `effect()` handles the async-items case. The `#measured` flag prevents double initialization.
 
-### 3.5 Library — `DestroyRef` Instead of `ngOnDestroy`
+### 3.5 Library - `DestroyRef` Instead of `ngOnDestroy`
 
 Replace the `OnDestroy` lifecycle hook with `DestroyRef`:
 
@@ -510,9 +510,9 @@ this.#destroyRef.onDestroy(() => this.#removeListeners());
 
 Remove the `OnDestroy` interface and `ngOnDestroy` method.
 
-### 3.6 Library — Skip `linkedSignal` (Developer Preview)
+### 3.6 Library - Skip `linkedSignal` (Developer Preview)
 
-`linkedSignal` is developer preview in v19. **Do not use it in a published library** — the API may change between v19 minor releases, which would force a library patch. Keep using the imperative approach for `renderedItems` in this phase. Adopt `linkedSignal` in Phase 4 (v20) where it's stable.
+`linkedSignal` is developer preview in v19. **Do not use it in a published library** - the API may change between v19 minor releases, which would force a library patch. Keep using the imperative approach for `renderedItems` in this phase. Adopt `linkedSignal` in Phase 4 (v20) where it's stable.
 
 ### 3.7 Migrate Testing from Karma to Web Test Runner
 
@@ -535,7 +535,7 @@ Karma has been deprecated since Angular 16. Angular 19 provides built-in support
 
 Update `tsconfig.spec.json` to remove `files: ["src/test.ts"]`.
 
-**Gotcha — Spec compatibility:** The existing Jasmine specs (`range-manager.spec.ts`, `grid-layout-calculator.spec.ts`) are pure logic tests with no Karma-specific APIs, so they should work without modification. However, verify that any custom Karma config (browser launchers, code coverage thresholds, reporters) has equivalent Web Test Runner configuration. The `karma.conf.js` files should be reviewed before deletion to ensure nothing is lost.
+**Gotcha - Spec compatibility:** The existing Jasmine specs (`range-manager.spec.ts`, `grid-layout-calculator.spec.ts`) are pure logic tests with no Karma-specific APIs, so they should work without modification. However, verify that any custom Karma config (browser launchers, code coverage thresholds, reporters) has equivalent Web Test Runner configuration. The `karma.conf.js` files should be reviewed before deletion to ensure nothing is lost.
 
 ### 3.8 Library `package.json`
 
@@ -550,7 +550,7 @@ Update `tsconfig.spec.json` to remove `files: ["src/test.ts"]`.
 
 ---
 
-## Phase 4: Angular 20 — Zoneless & Modern Signals
+## Phase 4: Angular 20 - Zoneless & Modern Signals
 
 **Branch:** `angular/20` (from `angular/19`)
 **Library version:** `20.0.0`
@@ -564,24 +564,24 @@ Update `tsconfig.spec.json` to remove `files: ["src/test.ts"]`.
 | `@angular-devkit/build-angular` | `~19.2.x` | `~20.0.x` |
 | `ng-packagr` | `~19.2.x` | `~20.0.x` |
 | `typescript` | `~5.6.3` | `~5.8.x` |
-| `zone.js` | Remove (zoneless) | — |
+| `zone.js` | Remove (zoneless) | - |
 | `@angular-eslint/*` | `19.x` | `20.x` |
 | `@typescript-eslint/*` | `8.x` | `8.x` |
 
 **Node.js requirement:** 20.x+ or 22.x+
 
-### 4.2 Library — Zoneless Change Detection
+### 4.2 Library - Zoneless Change Detection
 
 Angular 20 stabilizes zoneless change detection. The library must work in **both** zoned and zoneless consumer apps. Key changes:
 
-1. **Keep `NgZone` — do NOT remove it.** This is critical for backward compatibility. In zoned apps, `zone.js` patches `addEventListener`, so every scroll event triggers a full `ApplicationRef.tick()` traversal. The current `runOutsideAngular` pattern prevents this. Removing `NgZone` would cause a performance regression for all zoned consumers.
+1. **Keep `NgZone` - do NOT remove it.** This is critical for backward compatibility. In zoned apps, `zone.js` patches `addEventListener`, so every scroll event triggers a full `ApplicationRef.tick()` traversal. The current `runOutsideAngular` pattern prevents this. Removing `NgZone` would cause a performance regression for all zoned consumers.
 
-   `NgZone` always exists — in zoneless apps it's `NoopNgZone`, where `runOutsideAngular` and `run` are harmless no-ops. So keeping it costs nothing in zoneless mode:
+   `NgZone` always exists - in zoneless apps it's `NoopNgZone`, where `runOutsideAngular` and `run` are harmless no-ops. So keeping it costs nothing in zoneless mode:
 
    ```ts
    readonly #ngZone = inject(NgZone);
 
-   // In #setupListeners — works correctly in both modes:
+   // In #setupListeners - works correctly in both modes:
    // - Zoned: registers outside zone, avoids CD on every scroll
    // - Zoneless: NoopNgZone, runOutsideAngular is a no-op
    this.#ngZone.runOutsideAngular(() => {
@@ -629,7 +629,7 @@ Update the template to read signal values:
 
 > Angular batches signal writes within the same synchronous block, so writing to 3 signals triggers only one change detection cycle.
 
-### 4.3 Library — `linkedSignal` (Stable)
+### 4.3 Library - `linkedSignal` (Stable)
 
 `linkedSignal` is stable in Angular 20. Use it for state that resets when inputs change:
 
@@ -641,11 +641,11 @@ readonly #loadMoreFired = linkedSignal({
 });
 ```
 
-### 4.4 Library — `resource()` API (If Applicable)
+### 4.4 Library - `resource()` API (If Applicable)
 
 The `resource()` API is stable in Angular 20. While this library doesn't do async data fetching itself, consider documenting or providing an example of using `resource()` with the grid in the demo app for loading items.
 
-### 4.5 Library — Test in Both Zoned and Zoneless Modes
+### 4.5 Library - Test in Both Zoned and Zoneless Modes
 
 Since the library must work in both modes, the test suite should validate both. Add a second test configuration or a test helper:
 
@@ -662,13 +662,13 @@ describe('NgxVirtualGridComponent (zoneless)', () => {
 
 At minimum, run the full spec suite once with zone.js and once with `provideZonelessChangeDetection()` to catch regressions in either mode.
 
-### 4.6 Library — `output()` Emit from Scroll Handler
+### 4.6 Library - `output()` Emit from Scroll Handler
 
 The `loadMore` output emits from inside the scroll event handler (not a framework event). In zoneless mode, `OutputEmitterRef.emit()` notifies template-bound subscribers, but the subscriber's callback (the consumer's `(loadMore)="onLoadMore()"` handler) runs outside the framework's awareness. If the consumer's handler modifies state, they must use signals (or call `ChangeDetectorRef.markForCheck()` in zoned mode) for their view to update.
 
 This is the consumer's responsibility, not the library's, but it should be documented in the README's usage section for v20.
 
-### 4.7 Demo App — Zoneless Bootstrap
+### 4.7 Demo App - Zoneless Bootstrap
 
 **`main.ts`**:
 ```ts
@@ -684,7 +684,7 @@ bootstrapApplication(AppComponent, {
 Remove `zone.js` from `polyfills` in `angular.json`.
 Remove `zone.js` from workspace `package.json` dependencies.
 
-### 4.8 ESLint — Flat Config Migration
+### 4.8 ESLint - Flat Config Migration
 
 Angular 20 and `@angular-eslint` 20.x support ESLint flat config. Migrate from `.eslintrc.json` to `eslint.config.js`:
 
@@ -731,7 +731,7 @@ Update the consumer usage docs to show standalone imports (no module).
 }
 ```
 
-### 4.11 Demo Deployment — GitHub Pages
+### 4.11 Demo Deployment - GitHub Pages
 
 Host the demo app on GitHub Pages so users can see the library in action.
 
@@ -761,7 +761,7 @@ This builds the demo app and pushes the output to the `gh-pages` branch. The sit
 - Source: "Deploy from a branch"
 - Branch: `gh-pages`, folder: `/ (root)`
 
-**Optional — Automate with GitHub Actions:**
+**Optional - Automate with GitHub Actions:**
 
 Create `.github/workflows/deploy-demo.yml` to auto-deploy when `main` is updated:
 
@@ -800,7 +800,7 @@ jobs:
 
 > Since `main` always tracks the latest stable version, the demo site always shows the current release. No manual deploys needed after this is set up.
 
-**Update README** — Add a "Live Demo" link at the top:
+**Update README** - Add a "Live Demo" link at the top:
 ```markdown
 [Live Demo](https://theryansmee.github.io/ngx-virtual-grid/)
 ```
@@ -817,11 +817,11 @@ This section consolidates all identified risks across phases for quick reference
 
 ### Cross-Phase: ESLint Breaking Changes
 
-Every `@typescript-eslint` major bump (5→6→7→8) has rule renames and deprecations. The current `.eslintrc.json` uses `@typescript-eslint/indent` and `@typescript-eslint/comma-dangle`, both deprecated in v6 and moved to `@stylistic/eslint-plugin`. Each phase requires auditing the lint config — not just bumping versions. Budget time for this in every phase.
+Every `@typescript-eslint` major bump (5→6→7→8) has rule renames and deprecations. The current `.eslintrc.json` uses `@typescript-eslint/indent` and `@typescript-eslint/comma-dangle`, both deprecated in v6 and moved to `@stylistic/eslint-plugin`. Each phase requires auditing the lint config - not just bumping versions. Budget time for this in every phase.
 
 ### Cross-Phase: RxJS Compatibility
 
-The workspace uses `rxjs ~7.8.0`. The library itself does not import RxJS, but it's a workspace dependency. Angular 17–19 are compatible with RxJS 7.x. Angular 20 may recommend RxJS 7.8+ or 8.x. Validate compatibility at each step and update if needed.
+The workspace uses `rxjs ~7.8.0`. The library itself does not import RxJS, but it's a workspace dependency. Angular 17-19 are compatible with RxJS 7.x. Angular 20 may recommend RxJS 7.8+ or 8.x. Validate compatibility at each step and update if needed.
 
 ### Cross-Phase: Always Run `ng update` First
 
@@ -829,7 +829,7 @@ Angular provides migration schematics that automate many changes (standalone, co
 
 ### Phase 1: `@for` Track Expression
 
-The `@for` `track` clause is an expression, not a function reference like `*ngFor`'s `trackBy`. Use `track item.index` directly — it's simpler and more efficient than calling a function. Decide whether to keep or remove the consumer-facing `trackBy` input (major version bump allows breaking changes).
+The `@for` `track` clause is an expression, not a function reference like `*ngFor`'s `trackBy`. Use `track item.index` directly - it's simpler and more efficient than calling a function. Decide whether to keep or remove the consumer-facing `trackBy` input (major version bump allows breaking changes).
 
 ### Phase 2: `effect()` Does Not Replace `ngAfterViewInit`
 
@@ -837,7 +837,7 @@ The `effect()` replaces `ngOnChanges` only. `ngAfterViewInit` must stay because 
 
 ### Phase 2: `effect()` Implicit Signal Dependencies
 
-When `#handleItemsChange` reads `this.itemDirective()` inside the `effect()`, it creates an implicit dependency on the content query signal. This is intentional — it ensures the effect re-runs when the content child becomes available — but should be documented with a comment.
+When `#handleItemsChange` reads `this.itemDirective()` inside the `effect()`, it creates an implicit dependency on the content query signal. This is intentional - it ensures the effect re-runs when the content child becomes available - but should be documented with a comment.
 
 ### Phase 3: `afterNextRender` Fires Only Once
 
@@ -849,7 +849,7 @@ Do not use `linkedSignal` in a published library in v19. The API may change betw
 
 ### Phase 4: Do NOT Remove `NgZone` (Performance)
 
-Removing `NgZone` causes a performance regression for zoned consumers. `zone.js` patches `addEventListener`, so every scroll event triggers `ApplicationRef.tick()` without `runOutsideAngular`. Keep `NgZone` — in zoneless mode it's `NoopNgZone` where `runOutsideAngular`/`run` are harmless no-ops.
+Removing `NgZone` causes a performance regression for zoned consumers. `zone.js` patches `addEventListener`, so every scroll event triggers `ApplicationRef.tick()` without `runOutsideAngular`. Keep `NgZone` - in zoneless mode it's `NoopNgZone` where `runOutsideAngular`/`run` are harmless no-ops.
 
 ### Phase 4: `output()` Emit Outside Framework Events
 
@@ -881,59 +881,59 @@ The library is consumed by both types of apps. Run the test suite under both `zo
 | Zoneless change detection | v18 (exp), v20 (stable) | **v20** |
 | `linkedSignal()` | v19 (preview), v20 (stable) | **v20** |
 | ESLint flat config | v18+ | **v20** |
-| Remove `NgxVirtualGridModule` | — | **v19** |
+| Remove `NgxVirtualGridModule` | - | **v19** |
 
 ## Files Changed Per Phase
 
-### Phase 1 (v17) — 13 files
-- `package.json` — dependency versions
-- `.eslintrc.json` — fix deprecated `@typescript-eslint` v6 rules
-- `angular.json` — application builder, buildTarget
-- `tsconfig.json` — remove useDefineForClassFields, downlevelIteration
-- `projects/ngx-virtual-grid/package.json` — peer deps
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` — standalone, imports, remove trackBy input / internalTrackBy
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` — @for control flow with `track item.index`
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll-item.directive.ts` — standalone
-- `projects/ngx-virtual-grid/src/lib/ngx-virtual-grid.module.ts` — deprecate, re-export
-- `projects/ngx-virtual-grid/src/public-api.ts` — deprecation comment
-- `projects/demo/src/main.ts` — bootstrapApplication
-- `projects/demo/src/app/app.component.ts` — standalone
-- `projects/demo/src/app/app.module.ts` — DELETE
+### Phase 1 (v17) - 13 files
+- `package.json` - dependency versions
+- `.eslintrc.json` - fix deprecated `@typescript-eslint` v6 rules
+- `angular.json` - application builder, buildTarget
+- `tsconfig.json` - remove useDefineForClassFields, downlevelIteration
+- `projects/ngx-virtual-grid/package.json` - peer deps
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` - standalone, imports, remove trackBy input / internalTrackBy
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` - @for control flow with `track item.index`
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll-item.directive.ts` - standalone
+- `projects/ngx-virtual-grid/src/lib/ngx-virtual-grid.module.ts` - deprecate, re-export
+- `projects/ngx-virtual-grid/src/public-api.ts` - deprecation comment
+- `projects/demo/src/main.ts` - bootstrapApplication
+- `projects/demo/src/app/app.component.ts` - standalone
+- `projects/demo/src/app/app.module.ts` - DELETE
 
-### Phase 2 (v18) — 6 files
-- `package.json` — dependency versions
-- `.eslintrc.json` — fix deprecated `@typescript-eslint` v7 rules (if any)
-- `projects/ngx-virtual-grid/package.json` — peer deps
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` — signal inputs/outputs/queries, inject(), effect() (keep ngAfterViewInit)
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` — items().length
-- `projects/demo/src/app/app.component.ts` — minor updates
+### Phase 2 (v18) - 6 files
+- `package.json` - dependency versions
+- `.eslintrc.json` - fix deprecated `@typescript-eslint` v7 rules (if any)
+- `projects/ngx-virtual-grid/package.json` - peer deps
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` - signal inputs/outputs/queries, inject(), effect() (keep ngAfterViewInit)
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` - items().length
+- `projects/demo/src/app/app.component.ts` - minor updates
 
-### Phase 3 (v19) — 10+ files
-- `package.json` — dependency versions, remove karma deps
-- `angular.json` — web-test-runner
-- `projects/ngx-virtual-grid/package.json` — peer deps
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` — remove standalone:true, afterNextRender, DestroyRef
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll-item.directive.ts` — remove standalone:true
-- `projects/ngx-virtual-grid/src/lib/ngx-virtual-grid.module.ts` — DELETE
-- `projects/ngx-virtual-grid/src/public-api.ts` — remove module export
-- `projects/ngx-virtual-grid/tsconfig.spec.json` — remove test.ts file ref
-- `projects/ngx-virtual-grid/karma.conf.js` — DELETE
-- `projects/demo/karma.conf.js` — DELETE
-- `projects/ngx-virtual-grid/src/test.ts` — DELETE
-- `projects/demo/src/test.ts` — DELETE
+### Phase 3 (v19) - 10+ files
+- `package.json` - dependency versions, remove karma deps
+- `angular.json` - web-test-runner
+- `projects/ngx-virtual-grid/package.json` - peer deps
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` - remove standalone:true, afterNextRender, DestroyRef
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll-item.directive.ts` - remove standalone:true
+- `projects/ngx-virtual-grid/src/lib/ngx-virtual-grid.module.ts` - DELETE
+- `projects/ngx-virtual-grid/src/public-api.ts` - remove module export
+- `projects/ngx-virtual-grid/tsconfig.spec.json` - remove test.ts file ref
+- `projects/ngx-virtual-grid/karma.conf.js` - DELETE
+- `projects/demo/karma.conf.js` - DELETE
+- `projects/ngx-virtual-grid/src/test.ts` - DELETE
+- `projects/demo/src/test.ts` - DELETE
 
-### Phase 4 (v20) — 12+ files
-- `package.json` — dependency versions, remove zone.js from workspace, add deploy:demo script
-- `angular.json` — remove zone.js polyfill from demo
-- `projects/ngx-virtual-grid/package.json` — peer deps
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` — signals for all template state, remove CDR (keep NgZone), linkedSignal, dual-mode tests
-- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` — read signals in template
-- `projects/ngx-virtual-grid/src/lib/range-manager.spec.ts` — add zoneless test variants
-- `projects/demo/src/main.ts` — provideZonelessChangeDetection
-- `.eslintrc.json` — DELETE
-- `eslint.config.js` — CREATE (flat config)
-- `.github/workflows/deploy-demo.yml` — CREATE (auto-deploy demo to GitHub Pages)
-- `README.md` — update version table, prerequisites, usage docs, zoneless guidance, live demo link
+### Phase 4 (v20) - 12+ files
+- `package.json` - dependency versions, remove zone.js from workspace, add deploy:demo script
+- `angular.json` - remove zone.js polyfill from demo
+- `projects/ngx-virtual-grid/package.json` - peer deps
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.ts` - signals for all template state, remove CDR (keep NgZone), linkedSignal, dual-mode tests
+- `projects/ngx-virtual-grid/src/lib/virtual-scroll.component.html` - read signals in template
+- `projects/ngx-virtual-grid/src/lib/range-manager.spec.ts` - add zoneless test variants
+- `projects/demo/src/main.ts` - provideZonelessChangeDetection
+- `.eslintrc.json` - DELETE
+- `eslint.config.js` - CREATE (flat config)
+- `.github/workflows/deploy-demo.yml` - CREATE (auto-deploy demo to GitHub Pages)
+- `README.md` - update version table, prerequisites, usage docs, zoneless guidance, live demo link
 
 ## Execution Order
 
@@ -943,10 +943,10 @@ For each phase:
 3. Run any additional migration schematics (standalone, control-flow, signal-input, etc.)
 4. Update remaining dependencies manually
 5. Make manual code changes
-6. Run `npm run build:lib` — verify library builds
-7. Run `npm run test:ci` — verify tests pass
-8. Run `npm run lint` — verify lint passes
-9. Run `npm start` — verify demo app works
+6. Run `npm run build:lib` - verify library builds
+7. Run `npm run test:ci` - verify tests pass
+8. Run `npm run lint` - verify lint passes
+9. Run `npm start` - verify demo app works
 10. Commit with message format: `Upgrade to v{N}`
 11. Merge into `main`
 

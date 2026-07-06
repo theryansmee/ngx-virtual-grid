@@ -3,19 +3,39 @@ import { checkLoadMore, createLoadMoreState, LoadMoreResult, LoadMoreState } fro
 describe('checkLoadMore', () => {
 	const threshold: number = 0.8;
 
-	// helper: simulate a scroll event at a given position
+	// helper: simulate a scroll event at a given position.
+	// loadedEndPx defaults to totalContentHeight (non-paginated, no skeletons).
+	// pass loadedEndPx explicitly when skeletons inflate totalContentHeight,
+	// and loadedStartPx when virtual pages sit above the loaded data.
 	function check(
 		scrollIntoComponent: number,
 		viewportHeight: number,
 		totalContentHeight: number,
 		loading: boolean,
 		state: LoadMoreState,
+		loadedEndPx: number = totalContentHeight,
+		loadedStartPx: number = 0,
 	): LoadMoreResult {
-		return checkLoadMore(scrollIntoComponent, viewportHeight, totalContentHeight, loading, threshold, state);
+		return checkLoadMore(
+			scrollIntoComponent,
+			viewportHeight,
+			totalContentHeight,
+			loadedStartPx,
+			loadedEndPx,
+			loading,
+			threshold,
+			state,
+		);
 	}
 
 	it('should not fire when totalContentHeight is 0', () => {
 		const result = check(0, 500, 0, false, createLoadMoreState());
+		expect(result.shouldEmit).toBe(false);
+	});
+
+	it('should not fire when the loaded window is empty', () => {
+		// skeleton-only grid: total height comes from skeletons, no real items loaded
+		const result = check(0, 500, 2000, false, createLoadMoreState(), 0);
 		expect(result.shouldEmit).toBe(false);
 	});
 
@@ -30,7 +50,7 @@ describe('checkLoadMore', () => {
 		const result = check(1200, 500, 2000, false, createLoadMoreState());
 		expect(result.shouldEmit).toBe(true);
 		expect(result.state.loadMoreFired).toBe(true);
-		expect(result.state.contentHeightAtLastLoad).toBe(2000);
+		expect(result.state.loadedEndAtLastLoad).toBe(2000);
 	});
 
 	it('should not fire twice at same position', () => {
@@ -45,18 +65,18 @@ describe('checkLoadMore', () => {
 		expect(result.shouldEmit).toBe(false);
 	});
 
-	it('should re-arm when content grows and user is not past end', () => {
+	it('should re-arm when loaded data grows and user is not past end', () => {
 		// fire at 2000 height
 		const fired = check(1200, 500, 2000, false, createLoadMoreState());
-		// content grows to 3000, user still near threshold
+		// loaded data grows to 3000, user still near threshold
 		// scrolledInto = 2200 + 500 = 2700, ratio = 2700/3000 = 0.9
 		const result = check(2200, 500, 3000, false, fired.state);
 		expect(result.shouldEmit).toBe(true);
 	});
 
-	it('should full-reset when content shrinks (items replaced)', () => {
+	it('should full-reset when loaded data shrinks (items replaced)', () => {
 		const fired = check(1200, 500, 2000, false, createLoadMoreState());
-		// content shrinks to 1000 (items replaced), user near bottom
+		// loaded data shrinks to 1000 (items replaced), user near bottom
 		// scrolledInto = 400 + 500 = 900, ratio = 900/1000 = 0.9
 		const result = check(400, 500, 1000, false, fired.state);
 		expect(result.shouldEmit).toBe(true);
@@ -109,18 +129,18 @@ describe('checkLoadMore', () => {
 		const fired = check(1200, 500, 2000, false, createLoadMoreState());
 		expect(fired.shouldEmit).toBe(true);
 
-		// 2. loading starts (skeletons inflate content to 3000)
+		// 2. loading starts (skeletons inflate total content to 3000, loaded data stays 2000)
 		// 3. user scrolls past everything into footer
 		//    scrolledInto = 2800 + 500 = 3300 >= 3000
-		const duringLoad = check(2800, 500, 3000, true, fired.state);
+		const duringLoad = check(2800, 500, 3000, true, fired.state, 2000);
 		expect(duringLoad.shouldEmit).toBe(false);
 		expect(duringLoad.state.scrolledPastEnd).toBe(true); // key: flag set during loading
 
-		// 4. loading completes, content grows (skeletons removed, real items added)
+		// 4. loading completes, loaded data grows (skeletons removed, real items added)
 		//    user still in footer area, past the new end
 		//    scrolledInto = 2800 + 500 = 3300 >= 2500
 		const afterLoad = check(2800, 500, 2500, false, duringLoad.state);
-		expect(afterLoad.shouldEmit).toBe(false); // must NOT fire — this was the bug
+		expect(afterLoad.shouldEmit).toBe(false); // must NOT fire, this was the bug
 	});
 
 	it('should NOT fire after scrolling past end during loading even without skeletons', () => {
@@ -144,7 +164,7 @@ describe('checkLoadMore', () => {
 		const duringLoad = check(1800, 500, 2000, true, fired.state);
 
 		// loading completes, content grew so much that user is now WITHIN it
-		// scrolledInto = 1800 + 500 = 2300 < 2500 — user is at 92%, not past end
+		// scrolledInto = 1800 + 500 = 2300 < 2500, user is at 92%, not past end
 		const afterLoad = check(1800, 500, 2500, false, duringLoad.state);
 		expect(afterLoad.shouldEmit).toBe(true);
 	});
@@ -152,7 +172,7 @@ describe('checkLoadMore', () => {
 	it('should recover from past-end lockout after user scrolls back up', () => {
 		// go through the full DDoS scenario
 		const fired = check(1200, 500, 2000, false, createLoadMoreState());
-		const duringLoad = check(2800, 500, 3000, true, fired.state);
+		const duringLoad = check(2800, 500, 3000, true, fired.state, 2000);
 		const afterLoad = check(2800, 500, 2500, false, duringLoad.state);
 		expect(afterLoad.shouldEmit).toBe(false);
 
@@ -160,10 +180,43 @@ describe('checkLoadMore', () => {
 		const backUp = check(200, 500, 2500, false, afterLoad.state);
 		expect(backUp.state.scrolledPastEnd).toBe(false);
 
-		// scroll down to new threshold — should fire
+		// scroll down to new threshold, should fire
 		// scrolledInto = 1700 + 500 = 2200, ratio = 2200/2500 = 0.88
 		const reFire = check(1700, 500, 2500, false, backUp.state);
 		expect(reFire.shouldEmit).toBe(true);
+	});
+
+	// ========================================================================
+	// PAGINATION NAVIGATION: after loading new page content, scrolledPastEnd
+	// must clear if the new content extends past the user's position.
+	// Without this, page N+1 never loads after navigating to page N.
+	// ========================================================================
+
+	it('should clear scrolledPastEnd when content grows past user position (pagination)', () => {
+		// 1. fire loadMore at bottom of page N
+		const fired = check(1200, 500, 2000, false, createLoadMoreState());
+		expect(fired.shouldEmit).toBe(true);
+
+		// 2. user scrolls to the very end
+		const pastEnd = check(1800, 500, 2000, false, fired.state);
+		expect(pastEnd.state.scrolledPastEnd).toBe(true);
+
+		// 3. new page data arrives, content grows, user is no longer past end
+		//    scrolledInto = 1800 + 500 = 2300 < 4000
+		const afterNewPage = check(1800, 500, 4000, false, pastEnd.state);
+		expect(afterNewPage.state.scrolledPastEnd).toBe(false);
+		expect(afterNewPage.state.loadMoreFired).toBe(false);
+	});
+
+	it('should NOT clear scrolledPastEnd when content grows but user is still past end', () => {
+		const fired = check(1200, 500, 2000, false, createLoadMoreState());
+		const pastEnd = check(1800, 500, 2000, false, fired.state);
+
+		// content grows slightly but user is still past end
+		// scrolledInto = 1800 + 500 = 2300 >= 2200
+		const afterGrow = check(1800, 500, 2200, false, pastEnd.state);
+		expect(afterGrow.shouldEmit).toBe(false);
+		expect(afterGrow.state.scrolledPastEnd).toBe(true);
 	});
 
 	it('should reset loadMoreFired when scrolling back below threshold', () => {
@@ -172,5 +225,63 @@ describe('checkLoadMore', () => {
 		// scrolledInto = 200 + 500 = 700, ratio = 700/2000 = 0.35
 		const result = check(200, 500, 2000, false, fired.state);
 		expect(result.state.loadMoreFired).toBe(false);
+	});
+
+	// ========================================================================
+	// LOADED-WINDOW THRESHOLD: with pagination, virtual pages above the loaded
+	// data must not count towards the scroll ratio. Deep-linked users start at
+	// ~95% of TOTAL height, which used to fire loadMore on the first scroll.
+	// ========================================================================
+
+	describe('paginated loaded window', () => {
+		// page 8, pageSize 60, 5 cols, 200px rows:
+		// loaded window = rows 96-107 = 19200px to 21600px, total = 21600px
+		const loadedStart: number = 19200;
+		const loadedEnd: number = 21600;
+		const total: number = 21600;
+
+		it('should NOT fire on arrival at a deep-linked page (top of loaded window)', () => {
+			// scrollToPage puts the viewport top at the window start.
+			// window ratio = (19200 + 500 - 19200) / 2400 = 0.21, well below threshold.
+			// against TOTAL height this would be 0.91 and would have fired.
+			const result = check(19200, 500, total, false, createLoadMoreState(), loadedEnd, loadedStart);
+			expect(result.shouldEmit).toBe(false);
+			expect(result.state.loadMoreFired).toBe(false);
+		});
+
+		it('should fire once the user scrolls past the threshold within the loaded window', () => {
+			const arrival = check(19200, 500, total, false, createLoadMoreState(), loadedEnd, loadedStart);
+			// scrolledInto = 20800 + 500 = 21300, window ratio = 2100/2400 = 0.875
+			const result = check(20800, 500, total, false, arrival.state, loadedEnd, loadedStart);
+			expect(result.shouldEmit).toBe(true);
+		});
+
+		it('should NOT re-arm or fire when a page is prepended', () => {
+			// fire near the bottom of the loaded window
+			const fired = check(20800, 500, total, false, createLoadMoreState(), loadedEnd, loadedStart);
+			expect(fired.shouldEmit).toBe(true);
+
+			// page 7 is prepended: loadedStart drops by a page, loadedEnd and total
+			// are unchanged (page * pageSize + items.length is constant on prepend)
+			const afterPrepend = check(20800, 500, total, false, fired.state, loadedEnd, 16800);
+			expect(afterPrepend.shouldEmit).toBe(false);
+			expect(afterPrepend.state.loadMoreFired).toBe(true);
+		});
+	});
+
+	it('should not re-fire when skeletons deflate without new items', () => {
+		// fire at threshold
+		const fired = check(1200, 500, 2000, false, createLoadMoreState());
+
+		// loading starts, skeletons inflate total to 3000 while loaded data stays 2000
+		const duringLoad = check(1200, 500, 3000, true, fired.state, 2000);
+		expect(duringLoad.shouldEmit).toBe(false);
+
+		// loading ends with NO new items (e.g. request failed), skeletons deflate.
+		// loaded data end never moved, so this must not look like a shrink-reset
+		// or a grow-re-arm; the original fire stays latched.
+		const afterDeflate = check(1200, 500, 2000, false, duringLoad.state);
+		expect(afterDeflate.shouldEmit).toBe(false);
+		expect(afterDeflate.state.loadMoreFired).toBe(true);
 	});
 });

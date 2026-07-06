@@ -1,6 +1,12 @@
 <div class="docs-page">
 	<h2>API Reference</h2>
 
+	<p class="version-note">
+		The pagination and skeleton features (<code>page</code>, <code>pageSize</code>, <code>loading</code>,
+		<code>pageNeeded</code>, <code>pageChanged</code>, <code>scrollToPage</code>, <code>ngxVirtualGridSkeleton</code>)
+		require <code>22.0.4+</code>, <code>21.0.5+</code>, <code>20.0.7+</code>, or <code>19.0.7+</code>.
+	</p>
+
 	<h3>Inputs</h3>
 	<table>
 		<thead>
@@ -28,7 +34,7 @@
 				<td><code>loadMoreThreshold</code></td>
 				<td><code>number</code></td>
 				<td><code>0.8</code></td>
-				<td>Scroll ratio (0-1) at which the <code>loadMore</code> event fires</td>
+				<td>Scroll ratio (0-1) at which the <code>loadMore</code> event fires. Measured within the loaded data (skeletons and unloaded pages above are excluded), so deep-linked pages don't fire immediately.</td>
 			</tr>
 			<tr>
 				<td><code>scrollParent</code></td>
@@ -40,7 +46,7 @@
 				<td><code>page</code></td>
 				<td><code>number</code></td>
 				<td><code>0</code></td>
-				<td>The page number that the first item in <code>items</code> corresponds to. Used with pagination.</td>
+				<td>The page (0-indexed) that the first item in <code>items</code> belongs to. Keep it set to the lowest loaded page - it creates <code>page * pageSize</code> items of virtual space above the loaded data.</td>
 			</tr>
 			<tr>
 				<td><code>pageSize</code></td>
@@ -70,12 +76,12 @@
 			<tr>
 				<td><code>loadMore</code></td>
 				<td><code>void</code></td>
-				<td>Emits when the scroll position crosses the <code>loadMoreThreshold</code>. Resets when the <code>items</code> array length changes.</td>
+				<td>Emits when the scroll position crosses the <code>loadMoreThreshold</code> within the loaded data. Re-arms when more items are appended; prepending an earlier page does not re-arm it.</td>
 			</tr>
 			<tr>
 				<td><code>pageNeeded</code></td>
 				<td><code>number</code></td>
-				<td>Emits the page number needed when the viewport approaches the top of loaded data. Use <code>loadMore</code> for loading pages below.</td>
+				<td>Emits the earliest page needed to cover the viewport (at most <code>page - 1</code>) when the viewport top comes within one viewport (plus the buffer zone) of the top of loaded data, or is above it. Re-emits after each <code>page</code> input change until the viewport is covered. Use <code>loadMore</code> for loading pages below.</td>
 			</tr>
 			<tr>
 				<td><code>pageChanged</code></td>
@@ -104,7 +110,7 @@
 			</tr>
 			<tr>
 				<td><code>scrollToPage(page: number)</code></td>
-				<td>Scroll to the start of the given page</td>
+				<td>Scroll to the start of the given page (requires <code>pageSize</code> &gt; 0)</td>
 			</tr>
 			<tr>
 				<td><code>refresh()</code></td>
@@ -132,7 +138,7 @@
 			<tr>
 				<td><code>index</code></td>
 				<td><code>number</code></td>
-				<td>The item's index in the original array</td>
+				<td>The item's global index. Same as the array index in non-paginated mode; offset by <code>page * pageSize</code> in paginated mode</td>
 			</tr>
 		</tbody>
 	</table>

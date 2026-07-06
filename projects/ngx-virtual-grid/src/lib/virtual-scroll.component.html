@@ -17,7 +17,7 @@
 		<div
 			class="ngx-vg__grid-item"
 			role="listitem"
-			[attr.aria-setsize]="items().length"
+			[attr.aria-setsize]="effectiveTotalItems"
 			[attr.aria-posinset]="item.index + 1">
 
 			<ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item.data, index: item.index }">
