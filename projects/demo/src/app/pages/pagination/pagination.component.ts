@@ -1,4 +1,4 @@
-import { Component, inject, viewChild, Signal } from '@angular/core';
+import { Component, Signal, WritableSignal, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { NgxVirtualGridComponent, VirtualGridItemDirective, VirtualGridSkeletonDirective } from 'ngx-virtual-grid';
@@ -20,15 +20,17 @@ interface DemoItem {
 	styleUrl: './pagination.component.scss',
 })
 export class PaginationComponent {
-	public layout: 'grid' | 'list' = 'grid';
+	// signals throughout: the demo app is zoneless, so async state changes
+	// (the fake API's setTimeout) must be signal writes to schedule render.
+	public readonly layout: WritableSignal<'grid' | 'list'> = signal<'grid' | 'list'>('grid');
 
-	public displayPage: number = 0;
+	public readonly displayPage: WritableSignal<number> = signal<number>(0);
 
-	public firstLoadedPage: number = 0;
+	public readonly firstLoadedPage: WritableSignal<number> = signal<number>(0);
 
-	public items: DemoItem[] = [];
+	public readonly items: WritableSignal<DemoItem[]> = signal<DemoItem[]>([]);
 
-	public isLoading: boolean = true;
+	public readonly isLoading: WritableSignal<boolean> = signal<boolean>(true);
 
 	public readonly pageSize: number = 50;
 
@@ -59,7 +61,7 @@ export class PaginationComponent {
 			const targetPage: number = !isNaN(parsedPage) && parsedPage >= 0 ? parsedPage : 0;
 
 			// ignore the URL updates we write ourselves from onPageChanged
-			if (this.#initialised && targetPage === this.displayPage) {
+			if (this.#initialised && targetPage === this.displayPage()) {
 				return;
 			}
 
@@ -73,7 +75,7 @@ export class PaginationComponent {
 	}
 
 	public onLayoutChange(newLayout: 'grid' | 'list'): void {
-		this.layout = newLayout;
+		this.layout.set(newLayout);
 	}
 
 	public onPageChanged(page: number): void {
@@ -81,7 +83,7 @@ export class PaginationComponent {
 			return;
 		}
 
-		this.displayPage = page;
+		this.displayPage.set(page);
 
 		if (page <= 0) {
 			this.#removePageParam();
@@ -118,9 +120,9 @@ export class PaginationComponent {
 	}
 
 	#initialiseForPage(page: number): void {
-		this.displayPage = page;
-		this.firstLoadedPage = 0;
-		this.items = [];
+		this.displayPage.set(page);
+		this.firstLoadedPage.set(0);
+		this.items.set([]);
 		this.#lastLoadedPage = -1;
 		this.#loadedPages = new Set();
 		this.#pendingScrollPage = page;
@@ -164,18 +166,18 @@ export class PaginationComponent {
 	}
 
 	#simulateLoad(loadFn: () => void): void {
-		this.isLoading = true;
+		this.isLoading.set(true);
 
 		setTimeout(() => {
 			loadFn();
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}, 600);
 	}
 
 	#loadPagesDownTo(targetPage: number): void {
 		const clampedTarget: number = Math.max(0, targetPage);
 
-		for (let page: number = this.firstLoadedPage - 1; page >= clampedTarget; page--) {
+		for (let page: number = this.firstLoadedPage() - 1; page >= clampedTarget; page--) {
 			this.#prependPage(page);
 		}
 	}
@@ -189,15 +191,15 @@ export class PaginationComponent {
 
 		const pageItems: DemoItem[] = this.#generatePageItems(page);
 
-		if (this.items.length === 0) {
-			this.firstLoadedPage = page;
+		if (this.items().length === 0) {
+			this.firstLoadedPage.set(page);
 		}
 
 		this.#lastLoadedPage = Math.max(this.#lastLoadedPage, page);
-		this.items = [
-			...this.items,
+		this.items.update((currentItems: DemoItem[]) => [
+			...currentItems,
 			...pageItems,
-		];
+		]);
 	}
 
 	#prependPage(page: number): void {
@@ -208,11 +210,11 @@ export class PaginationComponent {
 		this.#loadedPages.add(page);
 
 		const pageItems: DemoItem[] = this.#generatePageItems(page);
-		this.firstLoadedPage = page;
-		this.items = [
+		this.firstLoadedPage.set(page);
+		this.items.update((currentItems: DemoItem[]) => [
 			...pageItems,
-			...this.items,
-		];
+			...currentItems,
+		]);
 	}
 
 	#generatePageItems(page: number): DemoItem[] {
