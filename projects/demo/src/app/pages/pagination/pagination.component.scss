@@ -1,0 +1,171 @@
+.controls {
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+
+	&__mode {
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		display: flex;
+		overflow: hidden;
+
+		button {
+			background: white;
+			padding: 6px 16px;
+			border: none;
+			display: block;
+			color: var(--color-muted);
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background-color 0.15s, color 0.15s;
+
+			&.active {
+				background: var(--color-accent);
+				color: white;
+			}
+
+			&:not(.active):hover {
+				background: var(--color-surface);
+			}
+		}
+	}
+
+	&__count {
+		color: var(--color-faint);
+		font-size: 14px;
+	}
+}
+
+.demo-grid {
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 16px;
+}
+
+.demo-list {
+	grid-template-columns: 1fr;
+	gap: 8px;
+}
+
+.card {
+	height: 160px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-weight: bold;
+	user-select: none;
+
+	.demo-list & {
+		height: 56px;
+		border-radius: 6px;
+		flex-direction: row;
+		gap: 12px;
+	}
+
+	&__index {
+		font-size: 12px;
+		opacity: 0.7;
+	}
+
+	&__title {
+		font-size: 18px;
+
+		.demo-list & {
+			font-size: 16px;
+		}
+	}
+}
+
+.card[data-color="0"] {
+	background-color: var(--card-1);
+}
+
+.card[data-color="1"] {
+	background-color: var(--card-2);
+}
+
+.card[data-color="2"] {
+	background-color: var(--card-3);
+}
+
+.card[data-color="3"] {
+	background-color: var(--card-4);
+}
+
+.card[data-color="4"] {
+	background-color: var(--card-5);
+}
+
+.card[data-color="5"] {
+	background-color: var(--card-6);
+}
+
+.card[data-color="6"] {
+	background-color: var(--card-7);
+}
+
+.card[data-color="7"] {
+	background-color: var(--card-8);
+}
+
+.skeleton-card {
+	height: 160px;
+	border-radius: 8px;
+	background: var(--color-surface, #f0f0f0);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+
+	.demo-list & {
+		height: 56px;
+		border-radius: 6px;
+		flex-direction: row;
+		gap: 16px;
+	}
+
+	&__line {
+		border-radius: 4px;
+		background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 1.5s infinite;
+
+		&--short {
+			width: 40px;
+			height: 12px;
+
+			.demo-list & {
+				width: 30px;
+				height: 10px;
+			}
+		}
+
+		&--long {
+			width: 80px;
+			height: 16px;
+
+			.demo-list & {
+				width: 100px;
+				height: 14px;
+			}
+		}
+	}
+}
+
+@keyframes skeleton-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+.docs-page {
+	max-width: 100%;
+}

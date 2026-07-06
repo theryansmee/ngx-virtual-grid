@@ -5,6 +5,7 @@ import {
 	InputSignal,
 	NgZone,
 	ChangeDetectionStrategy,
+	ChangeDetectorRef,
 	OutputEmitterRef,
 	Signal,
 	TemplateRef,
@@ -16,12 +17,16 @@ import {
 	inject,
 	effect,
 	signal,
+	untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { VirtualGridItemDirective } from './virtual-scroll-item.directive';
+import { VirtualGridSkeletonDirective } from './virtual-scroll-skeleton.directive';
 import { calculateGridLayout } from './grid-layout-calculator';
 import { calculateVisibleRange } from './range-manager';
 import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models';
+import { checkLoadMore, createLoadMoreState, LoadMoreState } from './load-more-manager';
+import { checkPageTracking, createPageTrackingState, PageTrackingState } from './page-tracker';
 
 @Component({
 	selector: 'ngx-virtual-grid',
@@ -29,6 +34,9 @@ import { GridLayout, VisibleRange, RenderedItem } from './virtual-scroll.models'
 	templateUrl: './virtual-scroll.component.html',
 	styleUrl: './virtual-scroll.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		role: 'list',
+	},
 })
 export class NgxVirtualGridComponent {
 	public readonly items: InputSignal<unknown[]> = input<unknown[]>([]);
@@ -39,9 +47,21 @@ export class NgxVirtualGridComponent {
 
 	public readonly scrollParent: InputSignal<HTMLElement | null> = input<HTMLElement | null>(null);
 
+	public readonly page: InputSignal<number> = input<number>(0);
+
+	public readonly pageSize: InputSignal<number> = input<number>(0);
+
+	public readonly loading: InputSignal<boolean> = input<boolean>(false);
+
 	public readonly loadMore: OutputEmitterRef<void> = output<void>();
 
+	public readonly pageNeeded: OutputEmitterRef<number> = output<number>();
+
+	public readonly pageChanged: OutputEmitterRef<number> = output<number>();
+
 	public readonly itemDirective: Signal<VirtualGridItemDirective | undefined> = contentChild(VirtualGridItemDirective);
+
+	public readonly skeletonDirective: Signal<VirtualGridSkeletonDirective | undefined> = contentChild(VirtualGridSkeletonDirective);
 
 	public readonly renderedItems: WritableSignal<RenderedItem[]> = signal<RenderedItem[]>([]);
 
@@ -49,17 +69,17 @@ export class NgxVirtualGridComponent {
 
 	public readonly bottomSpacerHeight: WritableSignal<number> = signal<number>(0);
 
+	public readonly columnOffsetCells: WritableSignal<unknown[]> = signal<unknown[]>([]);
+
 	readonly #ngZone: NgZone = inject(NgZone);
+
+	// retained ONLY for the measurement path: a signal write does not render
+	// synchronously, and #measureRowHeight needs real DOM to read. see #measureAndInit.
+	readonly #changeDetectorRef: ChangeDetectorRef = inject(ChangeDetectorRef);
 
 	readonly #hostEl: HTMLElement = inject(ElementRef<HTMLElement>).nativeElement;
 
 	readonly #destroyRef: DestroyRef = inject(DestroyRef);
-
-	#loadMoreFired: boolean = false;
-
-	#scrolledPastEnd: boolean = false;
-
-	#contentHeightAtLastLoad: number = 0;
 
 	#columnCount: number = 0;
 
@@ -69,11 +89,29 @@ export class NgxVirtualGridComponent {
 
 	#measured: boolean = false;
 
-	#layout: GridLayout = { columnCount: 1, rowHeight: 0, totalRows: 0, totalContentHeight: 0 };
+	#layout: GridLayout = {
+		columnCount: 1,
+		rowHeight: 0,
+		totalRows: 0,
+		totalContentHeight: 0,
+	};
 
-	#currentRange: VisibleRange = { startRow: 0, endRow: 0, startIndex: 0, endIndex: 0 };
+	#currentRange: VisibleRange = {
+		startRow: 0,
+		endRow: 0,
+		startIndex: 0,
+		endIndex: 0,
+	};
 
 	#resizeObserver: ResizeObserver | null = null;
+
+	#loadMoreState: LoadMoreState = createLoadMoreState();
+
+	#pageTrackingState: PageTrackingState = createPageTrackingState();
+
+	#previousPage: number = -1;
+
+	#previousGlobalEnd: number = -1;
 
 	#boundOnScroll: (() => void) | null = null;
 
@@ -83,10 +121,18 @@ export class NgxVirtualGridComponent {
 		return this.itemDirective()?.templateRef ?? null;
 	}
 
+	public get skeletonTemplate(): TemplateRef<unknown> | null {
+		return this.skeletonDirective()?.templateRef ?? null;
+	}
+
+	public get effectiveTotalItems(): number {
+		return this.#effectiveTotalItems();
+	}
+
 	constructor() {
-		// items available at first render
+		// items or skeletons available at first render
 		afterNextRender(() => {
-			if (this.items().length > 0) {
+			if (this.items().length > 0 || (this.loading() && this.skeletonDirective())) {
 				this.#measureAndInit();
 			}
 		});
@@ -95,7 +141,47 @@ export class NgxVirtualGridComponent {
 		effect(() => {
 			const newItems: unknown[] = this.items();
 			const directive: VirtualGridItemDirective | undefined = this.itemDirective();
-			this.#handleItemsChange(newItems, directive);
+			const currentPage: number = this.page();
+			const currentPageSize: number = this.pageSize();
+
+			// a prepend shifts page down while the end of loaded data stays put:
+			// page * pageSize + items.length is unchanged. re-arming loadMore on a
+			// prepend fires an unwanted forward load if the user sits past the
+			// threshold, so only re-arm when the loaded data end actually moved.
+			const globalEnd: number = currentPageSize > 0 ? currentPage * currentPageSize + newItems.length : newItems.length;
+			const isPrepend: boolean = currentPage < this.#previousPage && globalEnd === this.#previousGlobalEnd;
+			this.#previousPage = currentPage;
+			this.#previousGlobalEnd = globalEnd;
+
+			if (!isPrepend) {
+				// re-arm so the next scroll past threshold can fire loadMore again.
+				// without this, loadMoreFired stays true and loadMore never re-fires.
+				this.#loadMoreState = {
+					...this.#loadMoreState,
+					loadMoreFired: false,
+				};
+			}
+
+			untracked(() => this.#handleItemsChange(newItems, directive));
+
+			if (isPrepend) {
+				// a prepend doesn't change the total content height, so no scroll event
+				// fires when it lands. re-check here or a fast upward scroll into blank
+				// space stalls: the viewport still needs earlier pages but nothing asks.
+				untracked(() => this.#checkPageNeededAfterPrepend());
+			}
+		});
+
+		// loading state changes
+		effect(() => {
+			const isLoading: boolean = this.loading();
+			untracked(() => {
+				if (!this.#measured && isLoading && this.items().length === 0 && this.skeletonDirective()) {
+					this.#measureAndInit();
+				} else if (this.#measured) {
+					this.#recalculateLayout();
+				}
+			});
 		});
 
 		this.#destroyRef.onDestroy(() => this.#removeListeners());
@@ -107,28 +193,40 @@ export class NgxVirtualGridComponent {
 		}
 
 		const row: number = Math.floor(index / this.#layout.columnCount);
-		const hostTop: number = this.#hostEl.getBoundingClientRect().top + this.#getScrollTop();
-		const target: number = hostTop + row * this.#layout.rowHeight;
-		this.#setScrollTop(target);
+		const hostOffsetInScroller: number = this.#getHostOffsetInScroller();
+		this.#setScrollTop(hostOffsetInScroller + row * this.#layout.rowHeight);
 	}
 
 	public scrollToOffset(px: number): void {
-		const hostTop: number = this.#hostEl.getBoundingClientRect().top + this.#getScrollTop();
-		this.#setScrollTop(hostTop + px);
+		const hostOffsetInScroller: number = this.#getHostOffsetInScroller();
+		this.#setScrollTop(hostOffsetInScroller + px);
 	}
 
 	public refresh(): void {
 		this.#measured = false;
 
-		if (this.items().length === 0) {
+		if (this.items().length === 0 && !(this.loading() && this.skeletonDirective())) {
 			return;
 		}
 
 		this.#measureAndInit();
 	}
 
+	public scrollToPage(page: number): void {
+		const pageSizeValue: number = this.pageSize();
+
+		if (pageSizeValue <= 0) {
+			return;
+		}
+
+		this.scrollToIndex(page * pageSizeValue);
+	}
+
 	#handleItemsChange(newItems: unknown[], directive: VirtualGridItemDirective | undefined): void {
-		if (!this.#measured && newItems.length > 0 && directive) {
+		const canMeasureFromItems: boolean = newItems.length > 0 && !!directive;
+		const canMeasureFromSkeletons: boolean = newItems.length === 0 && this.loading() && !!this.skeletonDirective();
+
+		if (!this.#measured && (canMeasureFromItems || canMeasureFromSkeletons)) {
 			this.#measureAndInit();
 			return;
 		}
@@ -139,22 +237,38 @@ export class NgxVirtualGridComponent {
 	}
 
 	#measureAndInit(): void {
-		if (!this.itemDirective()) {
+		const itemDir: VirtualGridItemDirective | undefined = this.itemDirective();
+		const skeletonDir: VirtualGridSkeletonDirective | undefined = this.skeletonDirective();
+		const items: unknown[] = this.items();
+		const useSkeletons: boolean = items.length === 0 && this.loading() && !!skeletonDir;
+
+		if (!itemDir && !skeletonDir) {
+			return;
+		}
+
+		if (items.length === 0 && !useSkeletons) {
 			return;
 		}
 
 		this.#columnCount = this.#getColumnCountFromCSS();
 
 		// render enough items for measurement
-		const items: unknown[] = this.items();
-		const measureBatchSize: number = Math.min(items.length, this.#columnCount * 3);
+		const measureBatchSize: number = useSkeletons
+			? this.#columnCount * 3
+			: Math.min(items.length, this.#columnCount * 3);
 		const measureItems: RenderedItem[] = [];
 		for (let i: number = 0; i < measureBatchSize; i++) {
-			measureItems.push({ data: items[i], index: i });
+			measureItems.push({
+				data: useSkeletons ? null : items[i],
+				index: i,
+				skeleton: useSkeletons,
+			});
 		}
 		this.renderedItems.set(measureItems);
 
-		void this.#hostEl.offsetHeight;
+		// a signal write only schedules change detection - it does not render. force a
+		// synchronous pass so the measurement batch exists in the DOM before we read it.
+		this.#changeDetectorRef.detectChanges();
 
 		this.#measureRowHeight();
 
@@ -167,12 +281,13 @@ export class NgxVirtualGridComponent {
 	}
 
 	#getColumnCountFromCSS(): number {
-		const computed: string = getComputedStyle(this.#hostEl).gridTemplateColumns;
-		if (!computed || computed === 'none') {
+		const gridTemplateColumns: string = getComputedStyle(this.#hostEl).gridTemplateColumns;
+
+		if (!gridTemplateColumns || gridTemplateColumns === 'none') {
 			return 1;
 		}
 
-		return computed.split(' ').filter((s: string) => s.length > 0).length;
+		return gridTemplateColumns.split(' ').filter((column: string) => column.length > 0).length;
 	}
 
 	#measureRowHeight(): void {
@@ -198,12 +313,40 @@ export class NgxVirtualGridComponent {
 		this.#measured = this.#columnCount > 0 && this.#rowHeight > 0 && this.#itemHeight > 0;
 	}
 
+	#effectiveTotalItems(): number {
+		const pageSizeValue: number = this.pageSize();
+		const itemCount: number = this.items().length;
+
+		let total: number;
+		if (pageSizeValue <= 0) {
+			total = itemCount;
+		} else {
+			total = this.page() * pageSizeValue + itemCount;
+		}
+
+		if (this.loading() && this.skeletonDirective()) {
+			total += this.#getSkeletonCount();
+		}
+
+		return total;
+	}
+
+	#getSkeletonCount(): number {
+		if (!this.#measured || this.#layout.rowHeight <= 0) {
+			return this.#columnCount * 3;
+		}
+
+		const viewportHeight: number = this.#getViewportHeight();
+		const rowsInViewport: number = Math.ceil(viewportHeight / this.#layout.rowHeight);
+		return (rowsInViewport + this.bufferSize() * 2) * this.#layout.columnCount;
+	}
+
 	#recalculateLayout(): void {
 		this.#layout = calculateGridLayout(
 			this.#columnCount,
 			this.#rowHeight,
 			this.#itemHeight,
-			this.items().length,
+			this.#effectiveTotalItems(),
 		);
 
 		this.#updateVisibleRange();
@@ -211,8 +354,7 @@ export class NgxVirtualGridComponent {
 
 	#updateVisibleRange(): void {
 		const viewportHeight: number = this.#getViewportHeight();
-		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
-		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
+		const scrollIntoComponent: number = this.#getScrollIntoComponent();
 
 		this.#currentRange = calculateVisibleRange(
 			scrollIntoComponent,
@@ -221,36 +363,75 @@ export class NgxVirtualGridComponent {
 			this.#layout.totalRows,
 			this.bufferSize(),
 			this.#layout.columnCount,
-			this.items().length,
+			this.#effectiveTotalItems(),
 		);
 
 		this.#updateRenderedItems();
 		this.#updateSpacers();
 
-		// defer and re-read scroll position so we get fresh data after DOM settles
-		Promise.resolve().then(() => {
-			const freshRect: DOMRect = this.#hostEl.getBoundingClientRect();
-			const freshScrollInto: number = Math.max(0, -freshRect.top);
-			this.#checkLoadMore(freshScrollInto, viewportHeight);
-		});
+		// if items don't fill the viewport the user can't scroll, so fire proactively
+		if (this.#layout.totalContentHeight <= viewportHeight) {
+			this.#checkLoadMore(scrollIntoComponent, viewportHeight);
+		}
 	}
 
 	#updateRenderedItems(): void {
-		const { startIndex, endIndex } = this.#currentRange;
+		const {
+			startIndex,
+			endIndex,
+		} = this.#currentRange;
 		const items: unknown[] = this.items();
+		const hasSkeleton: boolean = !!this.skeletonDirective() && this.loading();
+		const pageSizeValue: number = this.pageSize();
+		const globalStart: number = pageSizeValue > 0 ? this.page() * pageSizeValue : 0;
+		const globalEnd: number = globalStart + items.length;
 		const newRendered: RenderedItem[] = [];
 
 		for (let i: number = startIndex; i < endIndex; i++) {
-			newRendered.push({ data: items[i], index: i });
+			const isInLoadedRange: boolean = i >= globalStart && i < globalEnd;
+
+			if (isInLoadedRange) {
+				newRendered.push({
+					data: items[i - globalStart],
+					index: i,
+					skeleton: false,
+				});
+				continue;
+			}
+
+			if (hasSkeleton) {
+				newRendered.push({
+					data: null,
+					index: i,
+					skeleton: true,
+				});
+			}
 		}
 
 		this.renderedItems.set(newRendered);
 	}
 
 	#updateSpacers(): void {
-		const { startRow, endRow } = this.#currentRange;
-		this.topSpacerHeight.set(startRow * this.#layout.rowHeight);
-		const rowsBelow: number = this.#layout.totalRows - endRow;
+		const rendered: RenderedItem[] = this.renderedItems();
+
+		if (rendered.length === 0) {
+			this.columnOffsetCells.set([]);
+			this.topSpacerHeight.set(this.#layout.totalContentHeight);
+			this.bottomSpacerHeight.set(0);
+			return;
+		}
+
+		const firstIndex: number = rendered[0].index;
+		const lastIndex: number = rendered[rendered.length - 1].index;
+
+		const firstRow: number = Math.floor(firstIndex / this.#layout.columnCount);
+		const lastRow: number = Math.floor(lastIndex / this.#layout.columnCount);
+
+		const columnOffset: number = firstIndex % this.#layout.columnCount;
+		this.columnOffsetCells.set(columnOffset > 0 ? new Array(columnOffset) : []);
+
+		this.topSpacerHeight.set(firstRow * this.#layout.rowHeight);
+		const rowsBelow: number = this.#layout.totalRows - (lastRow + 1);
 		this.bottomSpacerHeight.set(Math.max(0, rowsBelow * this.#layout.rowHeight));
 	}
 
@@ -288,8 +469,7 @@ export class NgxVirtualGridComponent {
 
 	#onScroll(): void {
 		const viewportHeight: number = this.#getViewportHeight();
-		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
-		const scrollIntoComponent: number = Math.max(0, -hostRect.top);
+		const scrollIntoComponent: number = this.#getScrollIntoComponent();
 
 		const newRange: VisibleRange = calculateVisibleRange(
 			scrollIntoComponent,
@@ -298,11 +478,12 @@ export class NgxVirtualGridComponent {
 			this.#layout.totalRows,
 			this.bufferSize(),
 			this.#layout.columnCount,
-			this.items().length,
+			this.#effectiveTotalItems(),
 		);
 
 		this.#applyRangeUpdate(newRange);
 		this.#checkLoadMore(scrollIntoComponent, viewportHeight);
+		this.#checkPageNeeded(scrollIntoComponent, viewportHeight);
 	}
 
 	#applyRangeUpdate(newRange: VisibleRange): void {
@@ -322,53 +503,62 @@ export class NgxVirtualGridComponent {
 	}
 
 	#checkLoadMore(scrollIntoComponent: number, viewportHeight: number): void {
-		if (this.#layout.totalContentHeight <= 0) {
+		// the loaded data window in pixels. skeletons and virtual pages above are
+		// excluded so the threshold measures progress through real loaded items.
+		const pageSizeValue: number = this.pageSize();
+		const globalStart: number = pageSizeValue > 0 ? this.page() * pageSizeValue : 0;
+		const globalEnd: number = globalStart + this.items().length;
+		const loadedStartPx: number = Math.floor(globalStart / this.#layout.columnCount) * this.#layout.rowHeight;
+		const loadedEndPx: number = Math.ceil(globalEnd / this.#layout.columnCount) * this.#layout.rowHeight;
+
+		const result = checkLoadMore(
+			scrollIntoComponent,
+			viewportHeight,
+			this.#layout.totalContentHeight,
+			loadedStartPx,
+			loadedEndPx,
+			this.loading(),
+			this.loadMoreThreshold(),
+			this.#loadMoreState,
+		);
+
+		this.#loadMoreState = result.state;
+
+		if (result.shouldEmit) {
+			this.#ngZone.run(() => this.loadMore.emit());
+		}
+	}
+
+	#checkPageNeededAfterPrepend(): void {
+		if (!this.#measured) {
 			return;
 		}
 
-		const scrolledInto: number = scrollIntoComponent + viewportHeight;
-		const wrapperEndVisible: boolean = scrolledInto >= this.#layout.totalContentHeight;
-		const itemsDontFillViewport: boolean = this.#layout.totalContentHeight <= viewportHeight;
+		this.#checkPageNeeded(this.#getScrollIntoComponent(), this.#getViewportHeight());
+	}
 
-		// items replaced or reduced, full reset
-		if (this.#contentHeightAtLastLoad > this.#layout.totalContentHeight) {
-			this.#contentHeightAtLastLoad = 0;
-			this.#loadMoreFired = false;
-			this.#scrolledPastEnd = false;
+	#checkPageNeeded(scrollIntoComponent: number, viewportHeight: number): void {
+		const result = checkPageTracking(
+			scrollIntoComponent,
+			viewportHeight,
+			this.#layout.rowHeight,
+			this.#layout.columnCount,
+			this.#effectiveTotalItems(),
+			this.pageSize(),
+			this.page(),
+			this.bufferSize(),
+			this.#pageTrackingState,
+		);
+
+		this.#pageTrackingState = result.state;
+
+		if (result.emitPageChanged !== null) {
+			this.#ngZone.run(() => this.pageChanged.emit(result.emitPageChanged!));
 		}
 
-		// content grew, re-arm (only scroll events clear scrolledPastEnd)
-		if (this.#contentHeightAtLastLoad > 0 && this.#layout.totalContentHeight > this.#contentHeightAtLastLoad) {
-			this.#loadMoreFired = false;
-			this.#contentHeightAtLastLoad = 0;
+		if (result.emitPageNeeded !== null) {
+			this.#ngZone.run(() => this.pageNeeded.emit(result.emitPageNeeded!));
 		}
-
-		// suppress if scrolled past end (unless items dont fill viewport)
-		if (wrapperEndVisible && (this.#loadMoreFired || this.#scrolledPastEnd) && !itemsDontFillViewport) {
-			this.#scrolledPastEnd = true;
-			return;
-		}
-
-		// scrolled back up, clear flag and re-arm
-		if (this.#scrolledPastEnd && !wrapperEndVisible) {
-			this.#scrolledPastEnd = false;
-			this.#loadMoreFired = false;
-		}
-
-		const scrollRatio: number = scrolledInto / this.#layout.totalContentHeight;
-
-		if (scrollRatio < this.loadMoreThreshold()) {
-			this.#loadMoreFired = false;
-			return;
-		}
-
-		if (this.#loadMoreFired) {
-			return;
-		}
-
-		this.#loadMoreFired = true;
-		this.#contentHeightAtLastLoad = this.#layout.totalContentHeight;
-		this.#ngZone.run(() => this.loadMore.emit());
 	}
 
 	#onResize(): void {
@@ -384,13 +574,26 @@ export class NgxVirtualGridComponent {
 		});
 	}
 
-	#getScrollTop(): number {
+	#getScrollIntoComponent(): number {
+		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
 		const parent: HTMLElement | null = this.scrollParent();
+
 		if (parent) {
-			return parent.scrollTop;
+			return Math.max(0, parent.getBoundingClientRect().top - hostRect.top);
 		}
 
-		return window.scrollY || document.documentElement.scrollTop;
+		return Math.max(0, -hostRect.top);
+	}
+
+	#getHostOffsetInScroller(): number {
+		const hostRect: DOMRect = this.#hostEl.getBoundingClientRect();
+		const parent: HTMLElement | null = this.scrollParent();
+
+		if (parent) {
+			return hostRect.top - parent.getBoundingClientRect().top + parent.scrollTop;
+		}
+
+		return hostRect.top + (window.scrollY || document.documentElement.scrollTop);
 	}
 
 	#setScrollTop(value: number): void {
