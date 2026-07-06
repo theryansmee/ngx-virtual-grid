@@ -12,6 +12,11 @@ export const routes: Routes = [
 		title: 'Demo',
 	},
 	{
+		path: 'pagination',
+		loadComponent: () => import('./pages/pagination/pagination.component').then(m => m.PaginationComponent),
+		title: 'Pagination',
+	},
+	{
 		path: 'getting-started',
 		loadComponent: () => import('./pages/getting-started/getting-started.component').then(m => m.GettingStartedComponent),
 		title: 'Getting Started',

@@ -8,3 +8,8 @@
 .ngx-vg__spacer-bottom {
 	grid-column: 1 / -1;
 }
+
+.ngx-vg__offset-cell {
+	visibility: hidden;
+	pointer-events: none;
+}
